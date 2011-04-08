@@ -22,6 +22,96 @@ qx.Class.define("rpcjs.demo.Application",
 
   members :
   {
+    main : function()
+    {
+      // Call super class
+      this.base(arguments);
+
+      // Enable logging in debug variant
+      if (qx.core.Environment.get("qx.debug"))
+      {
+        var appender;
+
+        // support native logging capabilities, e.g. Firebug for Firefox
+        appender = qx.log.appender.Native;
+
+        // support additional cross-browser console. Press F7 to toggle
+        // visibility
+        appender = qx.log.appender.Console;
+      }
+
+      // Create a button
+      var button = new qx.ui.form.Button("Run Tests", "rpcjs/test.png");
+
+      // Document is the application root
+      var doc = this.getRoot();
+			
+      // Add button to document at fixed coordinates
+      doc.add(button, {left: 100, top: 50});
+
+      // Whether to use the simple test or the complete RPC test suite
+      this.bSimple = false;
+
+      if (this.bSimple)
+      {
+        // Add a text box in which the result will be displayed
+        var text = new qx.ui.form.TextField();
+        doc.add(text, { left : 100, top : 100});
+      }
+      else
+      {
+        var label = new qx.ui.basic.Label(
+          "<h3>" +
+          "RPC results are displayed in the log. " +
+          "Expect two 'Server error 23' alerts." +
+          "</h3>");
+        label.setRich(true);
+        doc.add(label, { left : 100, top : 100});
+      }
+
+      // Put our RPC simulator on the job!
+      var rpcSim = new rpcjs.sim.Rpc(this.services, "/rpc");
+      
+      // Add an event listener
+      button.addListener(
+        "execute", 
+        function(e)
+        {
+          // Get an RPC object
+          var rpc = new qx.io.remote.Rpc();
+          rpc.setUrl("/rpc");
+          rpc.setServiceName("qooxdoo.test");
+          rpc.setTimeout(30000);
+
+          if (this.bSimple)
+          {
+            var _this = this;
+            this.rpcRunning = rpc.callAsync(
+              function(result, ex, id)
+              {
+                _this.rpcRunning = null;
+                if (ex == null) 
+                {
+                  text.setValue(result);
+                }
+                else 
+                {
+                  alert("Async(" + id + ") exception: " + ex);
+                }
+              },
+              "echo",
+              "hello world");
+          }
+          else
+          {
+            this.rpcServerFunctionalityAsync(rpc);
+          }
+
+        },
+        this);
+
+    },
+    
     /** Service methods */
     services : 
     {
@@ -174,76 +264,6 @@ qx.Class.define("rpcjs.demo.Application",
       }
     },
 
-    main : function()
-    {
-      // Call super class
-      this.base(arguments);
-
-      // Enable logging in debug variant
-      if (qx.core.Environment.get("qx.debug"))
-      {
-        var appender;
-
-        // support native logging capabilities, e.g. Firebug for Firefox
-        appender = qx.log.appender.Native;
-
-        // support additional cross-browser console. Press F7 to toggle
-        // visibility
-        appender = qx.log.appender.Console;
-      }
-
-      // Create a button
-      var button = new qx.ui.form.Button("Run Tests", "rpcjs/test.png");
-
-      // Document is the application root
-      var doc = this.getRoot();
-			
-      // Add button to document at fixed coordinates
-      doc.add(button, {left: 100, top: 50});
-
-      // Add a text box in which the result will be displayed
-      var text = new qx.ui.form.TextField();
-      doc.add(text, { left : 100, top : 100});
-
-      // Put our RPC simulator on the job!
-      var rpcSim = new rpcjs.sim.Rpc(this.services, "/rpc");
-      
-      // Add an event listener
-      button.addListener(
-        "execute", 
-        function(e)
-        {
-          // Get an RPC object
-          var rpc = new qx.io.remote.Rpc();
-          rpc.setUrl("/rpc");
-          rpc.setServiceName("qooxdoo.test");
-          rpc.setTimeout(30000);
-
-          this.rpcServerFunctionalityAsync(rpc);
-
-/*
-          var _this = this;
-          this.rpcRunning = rpc.callAsync(
-            function(result, ex, id)
-            {
-              _this.rpcRunning = null;
-              if (ex == null) 
-              {
-                text.setValue(result);
-              }
-              else 
-              {
-                alert("Async(" + id + ") exception: " + ex);
-              }
-            },
-            "echo",
-            "hello world");
-*/
-        },
-        this);
-
-    },
-    
     rpcServerFunctionalityAsync : function(rpc)
     {
       var             obj;
