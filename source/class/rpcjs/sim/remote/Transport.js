@@ -74,7 +74,7 @@ qx.Class.define("rpcjs.sim.remote.Transport",
   {
     __request         : null,
     __responseData    : null,
-    __resposneHeaders : null,
+    __responseHeaders : null,
 
     // overridden
     send : function()
