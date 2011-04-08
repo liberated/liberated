@@ -28,16 +28,16 @@ qx.Class.define("rpcjs.rpc.Server",
    *
    * @param serviceFactory {Function}
    *   A function which provides an interface to a service method. The
-   *   function will be called with a namespaced method name and an
-   *   rpcjs.rpc.error.Error object, and it should return a function
-   *   reference. If the method identified by name is not available, either
-   *   because it does not exist, or for some other reason (e.g. the
-   *   function's was called in a cross-domain fashion but the function is not
-   *   permitted to be used in that fashion), the provided error object's
-   *   methods should be used to provide details of the error, and then the
-   *   error object should be returned.
+   *   function will be called with a namespaced method name, and an
+   *   rpcjs.rpc.error.Error object. Under normal circumstances (success), it
+   *   should return a function reference. If the method identified by name is
+   *   not available, either because it does not exist, or for some other
+   *   reason (e.g. the function's was called in a cross-domain fashion but
+   *   the function is not permitted to be used in that fashion), the provided
+   *   error object's methods should be used to provide details of the error,
+   *   and then the error object should be returned.
    */
-  construct : function(serviceFactory, resultCallback)
+  construct : function(serviceFactory)
   {
     // Call the superclass constructor
     this.base(arguments);
@@ -48,15 +48,8 @@ qx.Class.define("rpcjs.rpc.Server",
       throw new Error("Missing service factory function");
     }
     
-    // The result callback is mandatory
-    if (! qx.lang.Type.isFunciton(resultCallback))
-    {
-      throw new Error("Missing result callback function");
-    }
-    
     // Save the parameters for future use
     this.setServiceFactory(serviceFactory);
-    this.setResultCallback(resultCallback);
   },
   
   properties :
@@ -81,25 +74,17 @@ qx.Class.define("rpcjs.rpc.Server",
     },
 
     /**
-     * A function which provides a function interface to a service method. The
-     * function will be called with a namespaced method name, and it should
-     * return a function reference. If the method identified by name is not
-     * available, either because it does not exist, or for some other reason
-     * (e.g. the function's was called in a cross-domain fashion but the
-     * function is not permitted to be used in that fashion), null should be
-     * returned.
+     * A function which provides an interface to a service method. The
+     * function will be called with a namespaced method name, and an
+     * rpcjs.rpc.error.Error object. Under normal circumstances (success), it
+     * should return a function reference. If the method identified by name is
+     * not available, either because it does not exist, or for some other
+     * reason (e.g. the function's was called in a cross-domain fashion but
+     * the function is not permitted to be used in that fashion), the provided
+     * error object's methods should be used to provide details of the error,
+     * and then the error object should be returned.
      */
     serviceFactory :
-    {
-      type     : "Function"
-    },
-
-    /**
-     * The function to call with the result of an RPC request. The function
-     * will be called with a single parameter, a string representing the JSON
-     * response.
-     */
-    resultCallback :
     {
       type     : "Function"
     }
@@ -256,7 +241,7 @@ qx.Class.define("rpcjs.rpc.Server",
       
       // Use the registered callback to get a service function associated with
       // this method name.
-      service = this.getServiceFactory()(fqMethod, error);
+      service = this.getServiceFactory()(fqMethod, protocol, error);
       
       // Was there an error?
       if (service == null)
@@ -281,6 +266,7 @@ qx.Class.define("rpcjs.rpc.Server",
         {
           error.setCode(rpcjs.rpc.error.ServerCode.v2.InternalError);
         }
+
         error.setMessage("Method threw an error: " + e);
         
         // Use this error as the result

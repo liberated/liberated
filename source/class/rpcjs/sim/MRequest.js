@@ -15,9 +15,21 @@
 #asset(rpcjs/*)
 */
 
+
 /**
- * Interface which must be implemented by classes providing service methods.
+ * Mixin to add simulator functionality to qx.io.remote.Exchange.
  */
-qx.Interface.define("rpcjs.sim.IService",
+qx.Mixin.define("rpcjs.sim.MExchange",
 {
+  properties :
+  {
+    /** Whether to simulate transport using rpcjs.sim.rpc.Simulator */
+    simulate :
+    {
+      type     : "Boolean",
+      nullable : false,
+      init     : false
+    }
+  }
 });
+
