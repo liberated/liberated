@@ -1,0 +1,302 @@
+/*
+ * Copyright:
+ *   2011 Derrell Lipman
+ *
+ * License:
+ *   LGPL: http://www.gnu.org/licenses/lgpl.html
+ *   EPL: http://www.eclipse.org/org/documents/epl-v10.php
+ *   See the LICENSE file in the project's top-level directory for details.
+ *
+ * Authors:
+ *   * Derrell Lipman (derrell)
+ */
+
+/*
+#asset(rpcjs/*)
+*/
+
+/**
+ * JSON-RPC server
+ */
+qx.Class.define("rpcjs.rpc.Server",
+{
+  extend : qx.core.Object,
+
+  
+  /**
+   * Constructor for a JSON_RPC server.
+   *
+   * @param serviceFactory {Function}
+   *   A function which provides an interface to a service method. The
+   *   function will be called with a namespaced method name and an
+   *   rpcjs.rpc.error.Error object, and it should return a function
+   *   reference. If the method identified by name is not available, either
+   *   because it does not exist, or for some other reason (e.g. the
+   *   function's was called in a cross-domain fashion but the function is not
+   *   permitted to be used in that fashion), the provided error object's
+   *   methods should be used to provide details of the error, and then the
+   *   error object should be returned.
+   */
+  construct : function(serviceFactory, resultCallback)
+  {
+    // Call the superclass constructor
+    this.base(arguments);
+
+    // The service factory is mandatory
+    if (! qx.lang.Type.isFunction(serviceFactory))
+    {
+      throw new Error("Missing service factory function");
+    }
+    
+    // The result callback is mandatory
+    if (! qx.lang.Type.isFunciton(resultCallback))
+    {
+      throw new Error("Missing result callback function");
+    }
+    
+    // Save the parameters for future use
+    this.setServiceFactory(serviceFactory);
+    this.setResultCallback(resultCallback);
+  },
+  
+  properties :
+  {
+    /**
+     * The version of the JSON-RPC protocol to use.  If null, the protocol is
+     * auto-identified from the request. Otherwise, the strings "qx1"
+     * (qooxdoo's modified Version 1) and "2.0" are currently allowed.
+     *
+     * @note
+     *   At this time, only qooxdoo's modified version 1 ("qx1") is supported.
+     */
+    protocol :
+    {
+      type     : "String",
+      init     : "qx1",
+      nullable : true,
+      check    : function(protocolId)
+      {
+        return [ "qx1" ].indexOf(protocolId) != -1;
+      }
+    },
+
+    /**
+     * A function which provides a function interface to a service method. The
+     * function will be called with a namespaced method name, and it should
+     * return a function reference. If the method identified by name is not
+     * available, either because it does not exist, or for some other reason
+     * (e.g. the function's was called in a cross-domain fashion but the
+     * function is not permitted to be used in that fashion), null should be
+     * returned.
+     */
+    serviceFactory :
+    {
+      type     : "Function"
+    },
+
+    /**
+     * The function to call with the result of an RPC request. The function
+     * will be called with a single parameter, a string representing the JSON
+     * response.
+     */
+    resultCallback :
+    {
+      type     : "Function"
+    }
+  },
+
+  members :
+  {
+    /**
+     * Process a single remote procedure call request.
+     *
+     * @param jsonInput {String}
+     *   The input string, containing the JSON-encoded RPC request.
+     *
+     * @return {String}
+     *   The JSON response.
+     */
+    processRequest : function(jsonInput)
+    {
+      var             request;  // the parsed input request
+      var             error;    // an error object
+      var             reply;    // a textual reply in case garbage input
+      var             protocol; // protocol version being used
+      var             fqMethod; // fully-qualified method name
+      var             service;  // service function to call
+      var             result;   // result of calling service function
+      
+      try
+      {
+        // Parse the JSON
+        request = qx.lang.Json.parse(jsonInput);
+      }
+      catch(e)
+      {
+        // We couldn't parse the request. Send back text, not JSON.
+        reply = "JSON-RPC request expected; could not parse request.";
+        return reply;
+      }
+
+      // Ensure we got a valid object or array
+      if (typeof(request) != "object")
+      {
+        // Invalid. Send back text, not JSON.
+        reply = "JSON-RPC request expected; got non-object/array.";
+        return reply;
+      }
+
+      // Determine which protocol to use
+      protocol = this.getProtocol();
+      switch(protocol)
+      {
+      case null:                // auto-determine protocol
+        // Is there a jsonrpc member?
+        if (typeof(request.jsonrpc == "string"))
+        {
+          // Yup. It had better be "2.0"!
+          if (request.jsonrpc != "2.0")
+          {
+            // Get a new version 2.0 error object.
+            error = new rpcjs.rpc.error.Error("2.0");
+            error.setCode(rpcjs.rpc.error.ServerCode.v2.InvalidRequest);
+            error.setMessage("'jsonrpc' member must be \"2.0\".");
+            error.setData("Found value " + request.jsonrpc + "in 'jsonrpc'.");
+                          
+            // Give 'em the error.
+            return error.stringify();
+          }
+          else
+          {
+            protocol = "2.0";
+
+            // Get a new version 2.0 error object.
+            error = new rpcjs.rpc.error.Error("2.0");
+            error.setCode(rpcjs.rpc.error.ServerCode.v2.InvalidRequest);
+            error.setMessage("JSON-RPC Version 2.0 not yet supported.");
+                          
+            // Give 'em the error.
+            return error.stringify();
+          }
+        }
+        else
+        {
+          protocol = "qx1";
+          
+          // Get a qooxdoo-modified version 1 error object
+          error = new rpcjs.rpc.error.Error("qx1");
+        }
+        break;
+
+      case "qx1":
+        // Get a qooxdoo-modified version 1 error object
+        error = new rpcjs.rpc.error.Error("qx1");
+        break;
+        
+/*
+      case "2.0":
+        // Get a protocol version 2.0 error object
+        error = new rpcjs.rpc.error.Error("2.0");
+        break;
+*/
+      }
+
+      // Ensure that the input has the requisite members, depending on the
+      // protocol in use.
+      switch(protocol)
+      {
+      case "qx1":
+        if (! qx.lang.Type.isString(request.service) ||
+            ! qx.lang.Type.isString(request.method) ||
+            ! qx.lang.Type.isArray(request.params))
+        {
+          // Invalid. Send back text, not JSON.
+          reply =
+            "JSON-RPC request expected; " +
+            "service, method, or params missing.";
+          return reply;
+        }
+        
+        // Generate the fully-qualified method name
+        fqMethod = request.serivce + "." + request.method;
+
+        /*
+         * Ensure the requested method name is kosher.  It should be:
+         *
+         *   - a dot-separated sequences of strings; no adjacent dots
+         *   - first character of each string is in [a-zA-Z] 
+         *   - other characters are in [_a-zA-Z0-9]
+         */
+        if (! /^[a-zA-Z][_.a-zA-Z0-9]*$/.test(fqMethod))
+        {
+          // There's some illegal character in the service or method name
+          error.setCode(rpcjs.rpc.error.ServerCode.qx1.MethodNotFound);
+          error.setMessage("Illegal character found in service name.");
+          return error.stringify();
+        }
+        
+        // Now ensure there are no double dots
+        if (request.service.indexOf(".."))
+        {
+          error.setCode(rpcjs.rpc.error.ServerCode.qx1.MethodNotFound);
+          error.setMessage("Illegal use of two consecutive dots " +
+                           "in service name.");
+          return error.stringify();
+        }
+        
+        // Future errors are almost certainly of Application origin
+        error.setOrigin(rpcjs.rpc.error.Origin.Application);
+        break;
+        
+/*
+      case "2.0":
+        break;
+*/
+      }
+      
+      // Use the registered callback to get a service function associated with
+      // this method name.
+      service = this.getServiceFactory()(fqMethod, error);
+      
+      // Was there an error?
+      if (service == null)
+      {
+        // Yup. Give 'em the error.
+        return error.stringify();
+      }
+      
+      // We should now have a service function to call. Call it.
+      try
+      {
+        result = service.apply(window, request.params);
+      }
+      catch(e)
+      {
+        // The service method threw an error. Create our own error from it.
+        if (this.getProtocol() == "qx1")
+        {
+          error.setCode(rpcjs.rpc.error.ServerCode.qx1.ScriptError);
+        }
+        else
+        {
+          error.setCode(rpcjs.rpc.error.ServerCode.v2.InternalError);
+        }
+        error.setMessage("Method threw an error: " + e);
+        
+        // Use this error as the result
+        result = error;
+      }
+      
+      // Was the result an error?
+      if (result instanceof rpcjs.rpc.error.Error)
+      {
+        // Yup. Stringify and return it.
+        error = result;         // make it clear it's an error object
+        return error.stringify();
+      }
+
+      // We have a standard result. Stringify and return it.
+      return qx.lang.Json.stringify(result);
+    }
+  }
+});
