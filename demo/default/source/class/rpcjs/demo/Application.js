@@ -69,7 +69,12 @@ qx.Class.define("rpcjs.demo.Application",
         doc.add(label, { left : 100, top : 100});
       }
 
-      // Put our RPC simulator on the job!
+      ////////////////////////////////////
+      // THE MAGIC HAPPENS HERE!
+      //
+      // Put our RPC simulator on the job! 
+      // This one line is all it takes.
+      ////////////////////////////////////
       var rpcSim = new rpcjs.sim.Rpc(this.services, "/rpc");
       
       // Add an event listener
