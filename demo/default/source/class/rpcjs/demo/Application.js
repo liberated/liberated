@@ -50,7 +50,7 @@ qx.Class.define("rpcjs.demo.Application",
       doc.add(button, {left: 100, top: 50});
 
       // Whether to use the simple test or the complete RPC test suite
-      this.bSimple = false;
+      this.bSimple = true;
 
       if (this.bSimple)
       {
