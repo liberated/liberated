@@ -19,20 +19,32 @@
 /**
  * Handler for remote procedure calls.
  */
-qx.Class.define("rpcjs.sim.handler.Rpc",
+qx.Class.define("rpcjs.sim.Rpc",
 {
-  construct : function(url, services)
+  construct : function(services, url)
   {
     // Save the services map.
     this.__services = services;
     
+    // Save the URL
+    this.setUrl(url);
+
     // Get an RPC Server instance.
     this.__rpcServer = new rpcjs.rpc.Server(this.__serviceFactory);
 
     // Register ourself as a handler for the specified URL.
-    rpcjs.sim.Simulator.registerHandler(url, this.__processRequest);
+    rpcjs.sim.Simulator.registerHandler(this.__processRequest);
   },
   
+  properties :
+  {
+    url :
+    {
+      type     : "String",
+      nullable : false
+    }
+  },
+
   members :
   {
     /** Our instance of the JSON-RPC server */
@@ -111,6 +123,13 @@ qx.Class.define("rpcjs.sim.handler.Rpc",
       var             jsonData;
       var             result;
       
+      // Make sure we can handle this request
+      if (request.url != this.getUrl())
+      {
+        // We don't support this one. Response header status was preset for us.
+        return null;
+      }
+
       // For the moment, we support only POST
       if (request.method != "POST")
       {

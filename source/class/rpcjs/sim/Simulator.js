@@ -29,15 +29,12 @@ qx.Class.define("rpcjs.sim.Simulator",
     /** Place to put requests as they are posted, while awaiting processing */
     __requestQueue : [],
 
-    /** Map of URL -> handlers */
+    /** List of handlers. Each will be tried in order of registration. */
     __handlers     : {},
 
 
     /**
      * Register a handler for a particular URL.
-     *
-     * @param url {String}
-     *   The URL which is used to request services of the specified handler.
      *
      * @param handler {Function}
      *   The function which is called to process a request with the given
@@ -47,9 +44,9 @@ qx.Class.define("rpcjs.sim.Simulator",
      *   the result of the request upon success. Upon failure, it should
      *   modify the two response header fields, and return null.
      */
-    registerHandler : function(url, handler)
+    registerHandler : function(handler)
     {
-      rpcjs.sim.Simulator.__handlers[url] = handler;
+      rpcjs.sim.Simulator.__handlers.push(handler);
     },
     
 
@@ -95,8 +92,8 @@ qx.Class.define("rpcjs.sim.Simulator",
      */
     __processQueue : function()
     {
+      var             i;
       var             request;
-      var             handler;
       var             response;
       var             responseHeaders;
       var             transportPost;
@@ -113,40 +110,54 @@ qx.Class.define("rpcjs.sim.Simulator",
       // Pull the first element off of the queue
       request = requestQueue.shift();
       
-      // Do we have a handler for this URL?
-      handler = Simulator.__handlers[request.url];
-      if (! handler)
+      // Save the transport's post method, and delete it from the request
+      transportPost = request.post;
+      delete request.post;
+
+      // Try each handler until we find one that handles this request
+      for (i = 0; i < Simulator.__handlers.length; i++)
       {
-        // Nope. Generate a response.
+        // Assume that the handler will not be able to process the request
+        responseHeaders =
+          {
+            status     : 501,
+            statusText : "Not supported by this handler"
+          };
+        // Call the handler's processRequest function.
+        response = Simulator.__handlers[i](request, responseHeaders);
+        
+        // See what the handler did with this request.
+        // status=200 means it handled the request successfully
+        // status=501 means we need to try another handler;
+        // anything else means it handled the request but an error occurred
+        if (responseHeaders.status == 200)
+        {
+          // Yes it did! Send the response
+          request.post(response, responseHeaders);
+          break;
+        }
+        else if (responseHeaders.status == 501)
+        {
+          // Try the next handler. Nothing to do here.
+        }
+        else
+        {
+          // The request got handled, but was not successful
+          request.post(null, responseHeaders);
+          break;
+        }
+      }
+
+      // If we reached the end of the handler list...
+      if (i == Simulator.__handlers.length)
+      {
+        // ... then generate a response indicating there was no handler
         responseHeaders =
           {
             status     : 404,
             statusText : "No handler for URL " + request.url
           };
         request.post(null, responseHeaders);
-      }
-      else
-      {
-        // We have a handler. Let it handle this request. Initialize for a
-        // success response.
-        responseHeaders =
-          {
-            status     : 200,
-            statusText : ""
-          };
-
-        // Save the transport's post method, and delete it from the request
-        transportPost = request.post;
-        delete request.post;
-
-        // Call the handler's processRequest function.
-        response = handler(request, responseHeaders);
-        
-        // Restore the post function to the request object.
-        request.post = transportPost;
-
-        // Call the transport's post function to give 'em the response.
-        request.post(response, responseHeaders);
       }
       
       // Is there anything left on the queue?

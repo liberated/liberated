@@ -21,7 +21,7 @@
  *
  * This class should not be used directly by client programmers.
  */
-qx.Class.define("rpcjs.sim.Transport",
+qx.Class.define("rpcjs.sim.remote.Transport",
 {
   extend : qx.io.remote.transport.Abstract,
 

@@ -19,7 +19,7 @@
 /**
  * Mixin to add simulator functionality to qx.io.remote.Exchange.
  */
-qx.Mixin.define("rpcjs.sim.MExchange",
+qx.Mixin.define("rpcjs.sim.remote.MExchange",
 {
   properties :
   {
