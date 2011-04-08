@@ -277,8 +277,16 @@ qx.Class.define("rpcjs.rpc.Server",
       if (result instanceof rpcjs.rpc.error.Error)
       {
         // Yup. Stringify and return it.
-        error = result;         // make it clear it's an error object
-        return error.stringify();
+        // The error class nows how to stringify itself, but we need a map.
+        // Go both directions, to obtain the map.
+        error = qx.lang.Json.parse(result.stringify());
+        
+        // Build the error response
+        return qx.lang.Json.stringify(
+          {
+            id    : request.id,
+            error : error
+          });
       }
 
       // We have a standard result. Stringify and return a proper response.
