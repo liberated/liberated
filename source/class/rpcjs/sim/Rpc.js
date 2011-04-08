@@ -21,6 +21,8 @@
  */
 qx.Class.define("rpcjs.sim.Rpc",
 {
+  extend : qx.core.Object,
+
   construct : function(services, url)
   {
     // Save the services map.
@@ -30,17 +32,20 @@ qx.Class.define("rpcjs.sim.Rpc",
     this.setUrl(url);
 
     // Get an RPC Server instance.
-    this.__rpcServer = new rpcjs.rpc.Server(this.__serviceFactory);
+    this.__rpcServer = new rpcjs.rpc.Server(
+      qx.lang.Function.bind(this.__serviceFactory, this));
 
     // Register ourself as a handler for the specified URL.
-    rpcjs.sim.Simulator.registerHandler(this.__processRequest);
+    rpcjs.sim.Simulator.registerHandler(
+      qx.lang.Function.bind(this.__processRequest, this));
   },
   
   properties :
   {
+    /** The URL which gains access to these RPC services */
     url :
     {
-      type     : "String",
+      check    : "String",
       nullable : false
     }
   },
@@ -142,6 +147,11 @@ qx.Class.define("rpcjs.sim.Rpc",
       // Retrieve the JSON-RPC data
       jsonData = request.data;
       
+      // From here on out, we'll have a successful result (even if the RPC
+      // sends back an error ressponse).
+      responseHeaders.status = 200;
+      responseHeaders.statusText = "";
+
       // Call the RPC server to process this request
       result = this.__rpcServer.processRequest(jsonData);
       return result;

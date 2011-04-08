@@ -43,7 +43,7 @@ qx.Class.define("rpcjs.rpc.error.Error",
      */
     protocol :
     {
-      type     : "String",
+      check    : "String",
       init     : "qx1",
       nullable : false,         // server knows the protocol by now.
       check    : function(protocolId)
@@ -58,7 +58,7 @@ qx.Class.define("rpcjs.rpc.error.Error",
      */
     origin :
     {
-      type    : "Integer",
+      check   : "Integer",
       init    : rpcjs.rpc.error.Origin.Server
     },
     
@@ -68,8 +68,8 @@ qx.Class.define("rpcjs.rpc.error.Error",
      */
     code :
     {
-      type    : "Integer",
-      init    : rpcjs.rpc.error.ServerCode.Unknown
+      check   : "Integer",
+      init    : rpcjs.rpc.error.ServerCode.qx1.Unknown
     },
     
     /**
@@ -77,7 +77,7 @@ qx.Class.define("rpcjs.rpc.error.Error",
      */
     message :
     {
-      type    : "String",
+      check   : "String",
       init    : "Unspecified error"
     },
     

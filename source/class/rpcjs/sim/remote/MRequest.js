@@ -19,14 +19,14 @@
 /**
  * Mixin to add simulator functionality to qx.io.remote.Exchange.
  */
-qx.Mixin.define("rpcjs.sim.remote.MExchange",
+qx.Mixin.define("rpcjs.sim.remote.MRequest",
 {
   properties :
   {
     /** Whether to simulate transport using rpcjs.sim.rpc.Simulator */
     simulate :
     {
-      type     : "Boolean",
+      check    : "Boolean",
       nullable : false,
       init     : false
     }

@@ -27,9 +27,11 @@ qx.Class.define("rpcjs.sim.remote.Transport",
 
   construct : function()
   {
+    // Call the superclass constructor
     this.base(arguments);
     
-    this.setResponseHeaders({});
+    // Initialize response headers
+    this.__responseHeaders = {};
   },
 
   statics :
@@ -41,7 +43,7 @@ qx.Class.define("rpcjs.sim.remote.Transport",
     {
       simulate              : true, // This is our unique capability
       synchronous           : true,
-      asynchronous          : false,
+      asynchronous          : true,
       crossDomain           : true,
       fileUpload            : false,
       programaticFormFields : true,
@@ -267,6 +269,7 @@ qx.Class.define("rpcjs.sim.remote.Transport",
 
         try 
         {
+          text = this.__responseData;
           if (text && text.length > 0)
           {
             ret = qx.util.Json.parse(text, false);
@@ -295,6 +298,7 @@ qx.Class.define("rpcjs.sim.remote.Transport",
 
         try 
         {
+          text = this.__responseData;
           if(text && text.length > 0)
           {
             ret = window.eval(text);
@@ -345,14 +349,21 @@ qx.Class.define("rpcjs.sim.remote.Transport",
   {
     // Patch qx.io.remote.Exchange with our own send() method that supports
     // looking at the "need" for a simulated transport.
-    qx.Class.patch(qx.io.remote.Exchange, rpcjs.sim.MExchange);
+    qx.Class.patch(qx.io.remote.Exchange, rpcjs.sim.remote.MExchange);
     
     // Similarly, for qx.io.remote.Request, except it can be a simple include
     // since it's only adding a property.
-    qx.Class.include(qx.io.remote.Request, rpcjs.sim.MRequest);
+    qx.Class.include(qx.io.remote.Request, rpcjs.sim.remote.MRequest);
 
+    // Patch qx.io.remote.Rpc with our own createRequest() method that supports
+    // setting the simulate property of the request.
+    qx.Class.patch(qx.io.remote.Rpc, rpcjs.sim.remote.MRpc);
+    
     // Register ourself with qx.io.remote.Exchange
-    qx.io.remote.Exchange.registerType(rpcjs.sim.Transport,
-                                       "rpcjs.sim.Transport");
+    qx.io.remote.Exchange.registerType(rpcjs.sim.remote.Transport,
+                                       "rpcjs.sim.remote.Transport");
+    
+    // Add ourself as the first tried transport
+    qx.io.remote.Exchange.typesOrder.unshift("rpcjs.sim.remote.Transport");
   }
 });

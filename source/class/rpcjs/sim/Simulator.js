@@ -13,6 +13,7 @@
 
 /*
 #asset(rpcjs/*)
+#use(rpcjs.sim.remote.Transport)
 */
 
 
@@ -30,7 +31,7 @@ qx.Class.define("rpcjs.sim.Simulator",
     __requestQueue : [],
 
     /** List of handlers. Each will be tried in order of registration. */
-    __handlers     : {},
+    __handlers     : [],
 
 
     /**
@@ -126,6 +127,9 @@ qx.Class.define("rpcjs.sim.Simulator",
         // Call the handler's processRequest function.
         response = Simulator.__handlers[i](request, responseHeaders);
         
+        // Restore the transport's post method to the request object
+        request.post = transportPost;
+
         // See what the handler did with this request.
         // status=200 means it handled the request successfully
         // status=501 means we need to try another handler;
@@ -172,6 +176,6 @@ qx.Class.define("rpcjs.sim.Simulator",
   
   defer : function()
   {
-    rpcjs.sim.Simulator.__timer = qx.util.TimerManager.getInstance();
+    rpcjs.sim.Simulator.__timerManager = qx.util.TimerManager.getInstance();
   }
 });

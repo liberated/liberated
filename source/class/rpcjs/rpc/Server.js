@@ -64,7 +64,7 @@ qx.Class.define("rpcjs.rpc.Server",
      */
     protocol :
     {
-      type     : "String",
+      check    : "String",
       init     : "qx1",
       nullable : true,
       check    : function(protocolId)
@@ -86,7 +86,7 @@ qx.Class.define("rpcjs.rpc.Server",
      */
     serviceFactory :
     {
-      type     : "Function"
+      check    : "Function"
     }
   },
 
@@ -203,7 +203,7 @@ qx.Class.define("rpcjs.rpc.Server",
         }
         
         // Generate the fully-qualified method name
-        fqMethod = request.serivce + "." + request.method;
+        fqMethod = request.service + "." + request.method;
 
         /*
          * Ensure the requested method name is kosher.  It should be:
@@ -221,7 +221,7 @@ qx.Class.define("rpcjs.rpc.Server",
         }
         
         // Now ensure there are no double dots
-        if (request.service.indexOf(".."))
+        if (request.service.indexOf("..") != -1)
         {
           error.setCode(rpcjs.rpc.error.ServerCode.qx1.MethodNotFound);
           error.setMessage("Illegal use of two consecutive dots " +
@@ -281,8 +281,12 @@ qx.Class.define("rpcjs.rpc.Server",
         return error.stringify();
       }
 
-      // We have a standard result. Stringify and return it.
-      return qx.lang.Json.stringify(result);
+      // We have a standard result. Stringify and return a proper response.
+      return qx.lang.Json.stringify(
+        {
+          id     : request.id,
+          result : result
+        });
     }
   }
 });

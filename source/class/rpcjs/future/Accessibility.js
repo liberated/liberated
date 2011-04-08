@@ -18,7 +18,7 @@
 /**
  * Accessibility constants
  */
-qx.Class.define("rpcjs.Accessibility",
+qx.Class.define("rpcjs.future.Accessibility",
 {
   extend : qx.core.Object,
 

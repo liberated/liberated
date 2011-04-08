@@ -130,11 +130,6 @@ qx.Mixin.define("rpcjs.sim.remote.MExchange",
                  "to handle this request: " + request);
       return false;
     }
-  },
-
-
-  defer :
-  {
   }
 });
 
