@@ -363,7 +363,7 @@ qx.Class.define("rpcjs.sim.remote.Transport",
     qx.io.remote.Exchange.registerType(rpcjs.sim.remote.Transport,
                                        "rpcjs.sim.remote.Transport");
     
-    // Add ourself as the first tried transport
-    qx.io.remote.Exchange.typesOrder.unshift("rpcjs.sim.remote.Transport");
+    // Add ourself as the last tried transport
+    qx.io.remote.Exchange.typesOrder.push("rpcjs.sim.remote.Transport");
   }
 });
