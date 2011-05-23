@@ -144,7 +144,7 @@ qx.Class.define("rpcjs.rpc.Server",
           {
             // Get a new version 2.0 error object.
             error = new rpcjs.rpc.error.Error("2.0");
-            error.setCode(rpcjs.rpc.error.ServerCode.v2.InvalidRequest);
+            error.setCode(qx.io.remote.RpcError.v2.error.InvalidRequest);
             error.setMessage("'jsonrpc' member must be \"2.0\".");
             error.setData("Found value " + request.jsonrpc + "in 'jsonrpc'.");
                           
@@ -157,7 +157,7 @@ qx.Class.define("rpcjs.rpc.Server",
 
             // Get a new version 2.0 error object.
             error = new rpcjs.rpc.error.Error("2.0");
-            error.setCode(rpcjs.rpc.error.ServerCode.v2.InvalidRequest);
+            error.setCode(qx.io.remote.RpcError.v2.error.InvalidRequest);
             error.setMessage("JSON-RPC Version 2.0 not yet supported.");
                           
             // Give 'em the error.
@@ -215,7 +215,7 @@ qx.Class.define("rpcjs.rpc.Server",
         if (! /^[a-zA-Z][_.a-zA-Z0-9]*$/.test(fqMethod))
         {
           // There's some illegal character in the service or method name
-          error.setCode(rpcjs.rpc.error.ServerCode.qx1.MethodNotFound);
+          error.setCode(qx.io.remote.RpcError.qx1.error.MethodNotFound);
           error.setMessage("Illegal character found in service name.");
           return error.stringify();
         }
@@ -223,14 +223,14 @@ qx.Class.define("rpcjs.rpc.Server",
         // Now ensure there are no double dots
         if (request.service.indexOf("..") != -1)
         {
-          error.setCode(rpcjs.rpc.error.ServerCode.qx1.MethodNotFound);
+          error.setCode(qx.io.remote.RpcError.qx1.error.MethodNotFound);
           error.setMessage("Illegal use of two consecutive dots " +
                            "in service name.");
           return error.stringify();
         }
         
         // Future errors are almost certainly of Application origin
-        error.setOrigin(rpcjs.rpc.error.Origin.Application);
+        error.setOrigin(qx.io.remote.RpcError.qx1.origin.Application);
         break;
         
 /*
@@ -260,11 +260,11 @@ qx.Class.define("rpcjs.rpc.Server",
         // The service method threw an error. Create our own error from it.
         if (this.getProtocol() == "qx1")
         {
-          error.setCode(rpcjs.rpc.error.ServerCode.qx1.ScriptError);
+          error.setCode(qx.io.remote.RpcError.qx1.error.ScriptError);
         }
         else
         {
-          error.setCode(rpcjs.rpc.error.ServerCode.v2.InternalError);
+          error.setCode(qx.io.remote.RpcError.v2.error.InternalError);
         }
 
         error.setMessage("Method threw an error: " + e);

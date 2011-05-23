@@ -54,22 +54,22 @@ qx.Class.define("rpcjs.rpc.error.Error",
 
     /**
      * The origin of the error. Its value must be one of the values of
-     * rpcjs.rpc.error.Origin. This is used only for protocol "qx1"
+     * qx.io.remote.RpcError.qx1.origin. This is used only for protocol "qx1"
      */
     origin :
     {
       check   : "Integer",
-      init    : rpcjs.rpc.error.Origin.Server
+      init    : qx.io.remote.RpcError.qx1.origin.Server
     },
     
     /**
      * The error code. If the origin is Server, then this value must be one of
-     * the values of rpcjs.rpc.error.ServerCode.
+     * the values of qx.io.remote.RpcError.qx1.error.server.*
      */
     code :
     {
       check   : "Integer",
-      init    : rpcjs.rpc.error.ServerCode.qx1.Unknown
+      init    : qx.io.remote.RpcError.qx1.error.server.Unknown
     },
     
     /**

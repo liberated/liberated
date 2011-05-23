@@ -92,11 +92,11 @@ qx.Class.define("rpcjs.sim.Rpc",
         // No such method.
         if (protocol == "qx1")
         {
-          error.setCode(rpcjs.rpc.error.ServerCode.qx1.MethodNotFound);
+          error.setCode(qx.io.remote.RpcError.qx1.error.MethodNotFound);
         }
         else
         {
-          error.setCode(rpcjs.rpc.error.ServerCode.v2.MethodNotFound);
+          error.setCode(qx.io.remote.RpcError.v2.error.MethodNotFound);
         }
         return null;
       }
