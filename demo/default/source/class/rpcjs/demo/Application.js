@@ -50,7 +50,7 @@ qx.Class.define("rpcjs.demo.Application",
       doc.add(button, {left: 100, top: 50});
 
       // Whether to use the simple test or the complete RPC test suite
-      this.bSimple = true;
+      this.bSimple = false;
 
       if (this.bSimple)
       {
@@ -62,9 +62,16 @@ qx.Class.define("rpcjs.demo.Application",
       {
         var label = new qx.ui.basic.Label(
           "<h3>" +
-          "RPC results are displayed in the log. " +
-          "Expect two 'Server error 23' alerts." +
-          "</h3>");
+            "<p>" +
+            "This runs the complete set of RPC tests, using the simulated " +
+            "transport and RPC simulator running in the browser. " +
+            "</p>" +
+            "<p>" +
+            "RPC results will be displayed in the log (e.g. Firebug). " +
+            "Expect two 'Server error 23' alerts which test errors from " +
+            "the RPC server." +
+            "</p>" +
+            "</h3>");
         label.setRich(true);
         doc.add(label, { left : 100, top : 100});
       }
