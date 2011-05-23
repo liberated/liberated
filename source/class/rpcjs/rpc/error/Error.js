@@ -43,7 +43,6 @@ qx.Class.define("rpcjs.rpc.error.Error",
      */
     protocol :
     {
-      check    : "String",
       init     : "qx1",
       nullable : false,         // server knows the protocol by now.
       check    : function(protocolId)

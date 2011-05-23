@@ -85,19 +85,32 @@ qx.Class.define("rpcjs.sim.Rpc",
       // evaluate it in hopes of getting a method reference.
       try
       {
+        // We have a dot-separated fully-qualified method name. We want to
+        // access that entry in the map of maps in this.__services. Using the
+        // index notation won't work, since it's multiple levels deep
+        // (i.e. fqMethodName might be something like "a.b.c").
+        // 
+        // FIXME: sterilize fqMethodName before eval().
         method = eval("this.__services" + "." + fqMethodName);
+        
+        // We might have just gotten null, which also means no such method
+        if (! method)
+        {
+          throw new Error("No such method");
+        }
       }
       catch(e)
       {
         // No such method.
         if (protocol == "qx1")
         {
-          error.setCode(qx.io.remote.RpcError.qx1.error.MethodNotFound);
+          error.setCode(qx.io.remote.RpcError.qx1.error.server.MethodNotFound);
         }
         else
         {
           error.setCode(qx.io.remote.RpcError.v2.error.MethodNotFound);
         }
+        error.setMessage(e.message);
         return null;
       }
       

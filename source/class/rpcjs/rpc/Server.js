@@ -64,7 +64,6 @@ qx.Class.define("rpcjs.rpc.Server",
      */
     protocol :
     {
-      check    : "String",
       init     : "qx1",
       nullable : true,
       check    : function(protocolId)
@@ -208,10 +207,16 @@ qx.Class.define("rpcjs.rpc.Server",
         /*
          * Ensure the requested method name is kosher.  It should be:
          *
-         *   - a dot-separated sequences of strings; no adjacent dots
+         *   First test for:
+         *   - a dot-separated sequences of strings
          *   - first character of each string is in [a-zA-Z] 
          *   - other characters are in [_a-zA-Z0-9]
+         *
+         *   Then verify:
+         *   - no two adjacent dots
          */
+        
+        // First test for valid characters
         if (! /^[a-zA-Z][_.a-zA-Z0-9]*$/.test(fqMethod))
         {
           // There's some illegal character in the service or method name
@@ -220,7 +225,7 @@ qx.Class.define("rpcjs.rpc.Server",
           return error.stringify();
         }
         
-        // Now ensure there are no double dots
+        // Next, ensure there are no double dots
         if (request.service.indexOf("..") != -1)
         {
           error.setCode(qx.io.remote.RpcError.qx1.error.MethodNotFound);
@@ -228,9 +233,6 @@ qx.Class.define("rpcjs.rpc.Server",
                            "in service name.");
           return error.stringify();
         }
-        
-        // Future errors are almost certainly of Application origin
-        error.setOrigin(qx.io.remote.RpcError.qx1.origin.Application);
         break;
         
 /*
@@ -247,12 +249,29 @@ qx.Class.define("rpcjs.rpc.Server",
       if (service == null)
       {
         // Yup. Give 'em the error.
-        return error.stringify();
+        // The error class knows how to stringify itself, but we need a map.
+        // Go both directions, to obtain the map.
+        error = qx.lang.Json.parse(error.stringify());
+        
+        // Build the error response
+        return qx.lang.Json.stringify(
+          {
+            id    : request.id,
+            error : error
+          });
       }
       
+        
+      if (protocol == "qx1")
+      {
+        // Future errors are almost certainly of Application origin
+        error.setOrigin(qx.io.remote.RpcError.qx1.origin.Application);
+      }
+
       // We should now have a service function to call. Call it.
       try
       {
+        request.params.push(error); // provide error object as last param
         result = service.apply(window, request.params);
       }
       catch(e)
@@ -260,14 +279,21 @@ qx.Class.define("rpcjs.rpc.Server",
         // The service method threw an error. Create our own error from it.
         if (this.getProtocol() == "qx1")
         {
-          error.setCode(qx.io.remote.RpcError.qx1.error.ScriptError);
+          error.setCode(qx.io.remote.RpcError.qx1.error.server.ScriptError);
         }
         else
         {
           error.setCode(qx.io.remote.RpcError.v2.error.InternalError);
         }
 
+        // Combine the message from the original error
         error.setMessage("Method threw an error: " + e);
+        
+        // This is classified as a server error, not application-origin.
+        if (protocol == "qx1")
+        {
+          error.setOrigin(qx.io.remote.RpcError.qx1.origin.Server);
+        }
         
         // Use this error as the result
         result = error;
@@ -277,7 +303,7 @@ qx.Class.define("rpcjs.rpc.Server",
       if (result instanceof rpcjs.rpc.error.Error)
       {
         // Yup. Stringify and return it.
-        // The error class nows how to stringify itself, but we need a map.
+        // The error class knows how to stringify itself, but we need a map.
         // Go both directions, to obtain the map.
         error = qx.lang.Json.parse(result.stringify());
         
