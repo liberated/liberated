@@ -26,7 +26,7 @@ qx.Class.define("rpcjs.appengine.Dbif",
     userService = UserServiceFactory.getUserService();
     whoami = userService.getCurrentUser();
 
-    // Simulate the logged-in user
+    // Save the logged-in user name
     this.setUserData("whoami", String(whoami));
 
     // Save the rpc key
