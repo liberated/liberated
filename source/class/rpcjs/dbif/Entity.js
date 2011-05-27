@@ -16,6 +16,7 @@ qx.Class.define("rpcjs.dbif.Entity",
     var             keyField;
     var             cloneObj;
     var             properties;
+    var             entityData;
 
     // Call the superclass constructor
     this.base(arguments);
@@ -26,6 +27,17 @@ qx.Class.define("rpcjs.dbif.Entity",
     // Get the key field name.
     keyField = this.getEntityKeyProperty();
     
+    // Retrieve any pre-set entity data
+    entityData = this.getData();
+
+    // Was there any pre-set entity data?
+    if (! entityData)
+    {
+      // Nope. Initialize it.
+      entityData = {};
+      this.setData(entityData);
+    }
+
     // If an entity key was specified...
     if (typeof entityKey != "undefined")
     {
@@ -42,16 +54,46 @@ qx.Class.define("rpcjs.dbif.Entity",
       if (queryResults.length == 0)
       {
         // Nope. Just set this object's key
-        this.getData()[keyField] = entityKey;
+        entityData[keyField] = entityKey;
       }
       else
       {
         // Set our object data to the data retrieved from the query
-        this.setData(queryResults[0]);
+        entityData = queryResults[0];
+        this.setData(entityData);
         
         // It's not a brand new object
         this.setBrandNew(false);
       }
+    }
+    
+    // Fill in any missing properties
+    rpcjs.dbif.Entity.propertyTypes[entityType].forEach(
+      function(propertyType)
+      {
+        // If this property type is not represented in the entity data...
+        if (typeof(entityData[propertyType]) == "undefined")
+        {
+          // ... then add it, with a null value.
+          entityData[propertyType] = null;
+        }
+      });
+    
+    // If we're in debugging mode...
+    if (qx.core.Environment.get("qx.debug"))
+    {
+      // ... then ensure that there are no properties that don't belong
+      entityData.forEach(
+        function(propertyType)
+        {
+          if (! qx.lang.Array.contains(
+                rpcjs.dbif.Entity.propertyTypes[entityType],
+                propertyType))
+          {
+            throw new Error("Unrecognized property (" + propertyType + ")" +
+                            " in entity data for type " + entityType + ".");
+          }
+        });
     }
   },
 
@@ -60,7 +102,8 @@ qx.Class.define("rpcjs.dbif.Entity",
     /** A map containing the data for this entity */
     data :
     {
-      init : null
+      init : null,
+      check : "Object"
     },
 
     /** Flag indicating that this entity was newly created */
