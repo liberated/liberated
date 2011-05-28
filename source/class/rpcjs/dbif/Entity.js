@@ -146,7 +146,8 @@ qx.Class.define("rpcjs.dbif.Entity",
     entityKeyProperty :
     {
       init  : "uid",
-      check : "qx.lang.Type.isString(value) || qx.lang.Type.isArray(value)"
+      check : "qx.lang.Type.isString(value) || qx.lang.Type.isArray(value)",
+      apply : "_applyEntityKeyProperty"
     },
 
     /** Mapping from classname to type used in the database */
@@ -308,6 +309,23 @@ qx.Class.define("rpcjs.dbif.Entity",
     getDatabaseProperties : function()
     {
       return rpcjs.dbif.Entity.propertyTypes[this.getEntityType()];
+    },
+    
+    // property apply function
+    _applyEntityKeyProperty : function(value, old)
+    {
+      if (qx.lang.Type.isArray(value))
+      {
+        var properties = rpcjs.dbif.Entity.propertyTypes[this.getEntityType()];
+        value.forEach(
+          function(subcomponent)
+          {
+            if (! properties.contains(subcomponent))
+            {
+              throw new Error("Unexpected property in key: " + subcomponent);
+            }
+          });
+      }
     }
   }
 });
