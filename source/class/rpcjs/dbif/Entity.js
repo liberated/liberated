@@ -12,11 +12,15 @@ qx.Class.define("rpcjs.dbif.Entity",
   
   construct : function(entityType, entityKey)
   {
+    var             i;
     var             queryResults;
     var             keyField;
     var             cloneObj;
     var             properties;
     var             entityData;
+    var             bComposite;
+    var             query;
+    var             field;
 
     // Call the superclass constructor
     this.base(arguments);
@@ -27,6 +31,21 @@ qx.Class.define("rpcjs.dbif.Entity",
     // Get the key field name.
     keyField = this.getEntityKeyProperty();
     
+    // The key field can be a string or an array. Ensure that the types match
+    // between the key field and the entity key.
+    if (qx.core.Environment.get("qx.debug"))
+    {
+      if (typeof(keyField) != typeof(entityKey) ||
+          (qx.lang.Type.getClass(keyField) == "Array" &&
+           keyField.length != entityKey.length))
+      {
+        throw new Error("Entity key does not match key type");
+      }
+    }
+    
+    // Determine whether we have a composite key
+    bComposite = (qx.lang.Type.getClass(keyField) === "Array");
+
     // Retrieve any pre-set entity data
     entityData = this.getData();
 
@@ -42,19 +61,26 @@ qx.Class.define("rpcjs.dbif.Entity",
     if (typeof entityKey != "undefined")
     {
       // ... then query for the object.
-      queryResults = rpcjs.dbif.Entity.query(
-        this.constructor.classname,
-        {
-          type  : "element",
-          field : keyField,
-          value : entityKey
-        });
+      queryResults = 
+        rpcjs.dbif.Entity.query(this.constructor.classname, entityKey);
       
       // Did we find anything there?
       if (queryResults.length == 0)
       {
-        // Nope. Just set this object's key
-        entityData[keyField] = entityKey;
+        // Nope. Just set this object's key. Is it composite?
+        if (bComposite)
+        {
+          // Yup. Set each of the fields
+          for (i = 0; i < keyField.length; i++)
+          {
+            entityData[keyField[i]] = entityKey[i];
+          }
+        }
+        else
+        {
+          // Not composite, so just assign the key to the single field
+          entityData[keyField] = entityKey;
+        }
       }
       else
       {
@@ -120,7 +146,7 @@ qx.Class.define("rpcjs.dbif.Entity",
     entityKeyProperty :
     {
       init  : "uid",
-      check : "String"
+      check : "qx.lang.Type.isString(value) || qx.lang.Type.isArray(value)"
     },
 
     /** Mapping from classname to type used in the database */

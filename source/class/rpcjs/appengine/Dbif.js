@@ -11,23 +11,10 @@ qx.Class.define("rpcjs.appengine.Dbif",
   extend  : qx.core.Object,
   type    : "abstract",
 
-  construct : function()
+  construct : function(rpcKey, rpcUrl)
   {
-    var             UserServiceFactory;
-    var             userService;
-    var             whoami;
-
     // Call the superclass constructor
     this.base(arguments, rpcKey);
-
-    // Find out who is logged in
-    UserServiceFactory =
-      Packages.com.google.appengine.api.users.UserServiceFactory;
-    userService = UserServiceFactory.getUserService();
-    whoami = userService.getCurrentUser();
-
-    // Save the logged-in user name
-    this.setUserData("whoami", String(whoami));
 
     // Save the rpc key
     this.__rpcKey = rpcKey;
@@ -42,7 +29,7 @@ qx.Class.define("rpcjs.appengine.Dbif",
       };
 
     // Start up the App Engine RPC engine
-    this.__rpcHandler = new rpcjs.appengine.Rpc(this.__services, "/rpc");
+    this.__rpcHandler = new rpcjs.appengine.Rpc(this.__services, rpcUrl);
   },
   
   statics :
@@ -56,6 +43,19 @@ qx.Class.define("rpcjs.appengine.Dbif",
      * The next value to use for an auto-generated key for an entity
      */
     __nextKey : 0,
+
+    /*
+     * Build a composite key.
+     *
+     * By default, this separates the key values using ASCII value 31, which
+     * is "Unit Separator". Applications that require that value to be
+     * allowable in key component values may replace this method with one that
+     * builds the key differently.
+     */
+    _buildCompositeKey : function(keyArr)
+    {
+      return keyArr.join(String.fromCharCode(31));
+    },
 
     
     /**
@@ -103,127 +103,162 @@ qx.Class.define("rpcjs.appengine.Dbif",
       Datastore = Packages.com.google.appengine.api.datastore;
       datastore = Datastore.DatastoreServiceFactory.getDatastoreService();
 
-      // Create a new query
-      Query = Datastore.Query;
-      query = new Query(type);
-
-      // If they're not asking for all objects, build a criteria predicate.
-      if (searchCriteria)
+      // If we've been given a key (single field or composite), just look up
+      // that single entity and return it.
+      switch(qx.lang.Type.getClass(searchCriteria))
       {
-          (function(criterium)
-            {
-              var             filterOp;
+      case "Array":
+        // Build the composite key
+        searchCriteria = this.constructor._buildCompositeKey(searchCriteria);
+        // fall through
 
+      case "String":
+        // We've been given a key. Try to retrieve the specified entity.
+        try
+        {
+          result =
+            datastore.get(Datastore.KeyFactory.createKey(type, searchCriteria));
+        }
+        catch(e)
+        {
+          // Entity not found
+          return [];
+        }
+        
+        dbResults = [];
+        dbResults.push(result);
+
+        // Make dbResults look like a Java array, so we can convert its
+        // contents to JavaScript types in code which is common with a Query
+        // result set.
+        dbResults.hasNext = function() { return this.length > 0; };
+        dbResults.next = function() { return this.shift(); };
+        break;
+
+      default:
+        // Create a new query
+        Query = Datastore.Query;
+        query = new Query(type);
+
+        // If they're not asking for all objects, build a criteria predicate.
+        if (searchCriteria)
+        {
+            (function(criterium)
+              {
+                var             filterOp;
+
+                switch(criterium.type)
+                {
+                case "op":
+                  switch(criterium.method)
+                  {
+                  case "and":
+                    // Generate the conditions specified in the children
+                    criterium.children.forEach(arguments.callee);
+                    break;
+
+                  default:
+                    throw new Error("Unrecognized criterium method: " +
+                                    criterium.method);
+                  }
+                  break;
+
+                case "element":
+                  // Map the specified filter operator to the db's filter ops.
+                  filterOp = criterium.filterOp || "=";
+                  switch(filterOp)
+                  {
+                  case "<=":
+                    filterOp = Query.FilterOperator.LESS_THAN_OR_EQUAL;
+                    break;
+
+                  case "<":
+                    filterOp = Query.FilterOperator.LESS_THAN;
+                    break;
+
+                  case "=":
+                    filterOp = Query.FilterOperator.EQUAL;
+                    break;
+
+                  case ">":
+                    filterOp = Query.FilterOperator.GREATER_THAN;
+                    break;
+
+                  case ">=":
+                    filterOp = Query.FilterOperator.GREATER_THAN_OR_EQUAL;
+                    break;
+
+                  case "!=":
+                    filterOp = Query.FilterOperator.NOT_EQUAL;
+                    break;
+
+                  default:
+                    throw new Error("Unrecognized logical operation: " +
+                                    criterium.filterOp);
+                  }
+
+                  // Add a filter using the provided parameters
+                  query.addFilter(criterium.field, 
+                                  filterOp,
+                                  criterium.value);
+                  break;
+
+                default:
+                  throw new Error("Unrceognized criterium type: " +
+                                  criterium.type);
+                }
+              })(searchCriteria);
+        }
+
+        // Assume the default set of result criteria (no limits, offset=0)
+        options = Datastore.FetchOptions.Builder.withDefaults();
+
+        // If there are any result criteria specified...
+        if (resultCriteria)
+        {
+          // ... then go through the criteria list and handle each.
+          resultCriteria.forEach(
+            function(criterium)
+            {
               switch(criterium.type)
               {
-              case "op":
-                switch(criterium.method)
-                {
-                case "and":
-                  // Generate the conditions specified in the children
-                  criterium.children.forEach(arguments.callee);
-                  break;
-
-                default:
-                  throw new Error("Unrecognized criterium method: " +
-                                  criterium.method);
-                }
+              case "limit":
+                options.withLimit(criterium.value);
                 break;
 
-              case "element":
-                // Map the specified filter operator to the db's filter ops.
-                filterOp = criterium.filterOp || "=";
-                switch(filterOp)
-                {
-                case "<=":
-                  filterOp = Query.FilterOperator.LESS_THAN_OR_EQUAL;
-                  break;
-                  
-                case "<":
-                  filterOp = Query.FilterOperator.LESS_THAN;
-                  break;
-                  
-                case "=":
-                  filterOp = Query.FilterOperator.EQUAL;
-                  break;
-                  
-                case ">":
-                  filterOp = Query.FilterOperator.GREATER_THAN;
-                  break;
-                  
-                case ">=":
-                  filterOp = Query.FilterOperator.GREATER_THAN_OR_EQUAL;
-                  break;
-                  
-                case "!=":
-                  filterOp = Query.FilterOperator.NOT_EQUAL;
-                  break;
-                  
-                default:
-                  throw new Error("Unrecognized logical operation: " +
-                                  criterium.filterOp);
-                }
+              case "offset":
+                options.withOffset(criterium.value);
+                break;
 
-                // Add a filter using the provided parameters
-                query.addFilter(criterium.field, 
-                                filterOp,
-                                criterium.value);
+              case "sort":
+                qx.lang.Object.getKeys(criterium.value).forEach(
+                  function(key)
+                  {
+                    query.addSort(key, 
+                                  (criterium.value[key] === "desc"
+                                   ? Query.SortDirection.DESCENDING
+                                   : Query.SortDirection.ASCENDING));
+                  });
                 break;
 
               default:
-                throw new Error("Unrceognized criterium type: " +
+                throw new Error("Unrecognized result criterium type: " +
                                 criterium.type);
               }
-            })(searchCriteria);
+            });
+        }
+
+        // Get the field names for this entity type
+        propertyTypes = rpcjs.dbif.Entity.propertyTypes;
+        fields = propertyTypes[type].fields;
+
+        // Prepare to issue a query
+        preparedQuery = datastore.prepare(query);
+
+        // Issue the query
+        dbResults = preparedQuery.asIterator(options);
+        break;
       }
-      
-      // Assume the default set of result criteria (no limits, offset=0)
-      options = Datastore.FetchOptions.Builder.withDefaults();
-      
-      // If there are any result criteria specified...
-      if (resultCriteria)
-      {
-        // ... then go through the criteria list and handle each.
-        resultCriteria.forEach(
-          function(criterium)
-          {
-            switch(criterium.type)
-            {
-            case "limit":
-              options.withLimit(criterium.value);
-              break;
-              
-            case "offset":
-              options.withOffset(criterium.value);
-              break;
-              
-            case "sort":
-              qx.lang.Object.getKeys(criterium.value).forEach(
-                function(key)
-                {
-                  query.addSort(key, 
-                                (criterium.value[key] === "desc"
-                                 ? Query.SortDirection.DESCENDING
-                                 : Query.SortDirection.ASCENDING));
-                });
-              break;
-
-            default:
-              throw new Error("Unrecognized result criterium type: " +
-                              criterium.type);
-            }
-          });
-      }
-
-      // Get the field names for this entity type
-      propertyTypes = rpcjs.dbif.Entity.propertyTypes;
-      fields = propertyTypes[type].fields;
-
-      // Prepare to issue a query
-      preparedQuery = datastore.prepare(query);
-      
-      // Issue the query
-      dbResults = preparedQuery.asIterator(options);
       
       // Process the query results
       while (dbResults.hasNext())
@@ -249,6 +284,7 @@ qx.Class.define("rpcjs.appengine.Dbif",
                {
                  case "Key":
                  case "String":
+                 case "Date":
                    return(String(value));
 
                  case "LongString":
@@ -326,13 +362,25 @@ qx.Class.define("rpcjs.appengine.Dbif",
       }
 
       // If there's no key yet...
-      if (typeof(key) == "undefined" || key === null)
+      switch(qx.lang.Type.getClass(key))
       {
+      case "Undefined":
+      case "Null":
         // Generate a new key
         key = String(rpcjs.appengine.Dbif.__nextKey++);
         
         // Save this key in the key field
         entityData[entity.getEntityKeyProperty()] = key;
+        break;
+        
+      case "Array":
+        // Build a composite key string from these key values
+        key = this.constructor._buildCompositeKey(key);
+        break;
+        
+      case "String":
+        // nothing special to do
+        break;
       }
 
       // Create the database key value

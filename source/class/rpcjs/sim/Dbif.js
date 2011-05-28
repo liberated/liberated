@@ -11,7 +11,7 @@ qx.Class.define("rpcjs.sim.Dbif",
   extend  : qx.core.Object,
   type    : "abstract",
 
-  construct : function(rpcKey)
+  construct : function(rpcKey, rpcUrl)
   {
     // Call the superclass constructor
     this.base(arguments);
@@ -29,7 +29,7 @@ qx.Class.define("rpcjs.sim.Dbif",
       };
 
     // Start up the RPC simulator
-    new rpcjs.sim.Rpc(this.__services, "/rpc");
+    new rpcjs.sim.Rpc(this.__services, rpcUrl);
   },
   
   statics :
@@ -41,6 +41,19 @@ qx.Class.define("rpcjs.sim.Dbif",
      * The next value to use for an auto-generated key for an entity
      */
     __nextKey : 0,
+
+    /*
+     * Build a composite key.
+     *
+     * By default, this separates the key values using ASCII value 31, which
+     * is "Unit Separator". Applications that require that value to be
+     * allowable in key component values may replace this method with one that
+     * builds the key differently.
+     */
+    _buildCompositeKey : function(keyArr)
+    {
+      return keyArr.join(String.fromCharCode(31));
+    },
 
     
     /**
@@ -93,6 +106,24 @@ qx.Class.define("rpcjs.sim.Dbif",
       // Initialize our results array
       results = [];
 
+      // If we've been given a key (single field or composite), just look up
+      // that single entity and return it.
+      switch(qx.lang.Type.getClass(searchCriteria))
+      {
+      case "Array":
+        // Join the field values using a known field separator
+        searchCriteria = this.constructor._buildCompositeKey(searchCriteria);
+
+        // fall through
+
+      case "String":
+        if (typeof dbObjectMap[searchCriteria] !== "undefined")
+        {
+          results.push(dbObjectMap[searchCriteria]);
+        }
+        return results;
+      }
+
       // If they're not asking for all objects, build a criteria predicate.
       if (searchCriteria)
       {
@@ -136,6 +167,7 @@ qx.Class.define("rpcjs.sim.Dbif",
                 case "Key":
                 case "String":
                 case "LongString":
+                case "Date":
                   ret += 
                     "entry[\"" + criterium.field + "\"] === " +
                     "\"" + criterium.value + "\" ";
@@ -286,22 +318,35 @@ qx.Class.define("rpcjs.sim.Dbif",
       var             propertyName;
       
       // If there's no key yet...
-      if (typeof(key) == "undefined" || key === null)
+      switch(qx.lang.Type.getClass(key))
       {
+      case "Undefined":
+      case "Null":
         // Generate a new key
         key = String(rpcjs.sim.Dbif.__nextKey++);
         
         // Save this key in the key field
         entityData[entity.getEntityKeyProperty()] = key;
+        break;
+        
+      case "Array":
+        // Build a composite key string from these key values
+        key = this.constructor._buildCompositeKey(key);
+        break;
+        
+      case "String":
+        // nothing special to do
+        break;
       }
 
-      // Create a simple map of properties and values to be put in the database
+      // Create a simple map of properties and values to be put in the
+      // database
       for (propertyName in entity.getDatabaseProperties())
       {
         // Add this property value to the data to be saved to the database.
         data[propertyName] = entityData[propertyName];
       }
-      
+
       // Save it to the database
       rpcjs.sim.Dbif.Database[type][key] = data;
     },
