@@ -320,7 +320,7 @@ qx.Class.define("rpcjs.dbif.Entity",
         value.forEach(
           function(subcomponent)
           {
-            if (! properties.contains(subcomponent))
+            if (! qx.lang.Array.contains(properties, subcomponent))
             {
               throw new Error("Unexpected property in key: " + subcomponent);
             }
