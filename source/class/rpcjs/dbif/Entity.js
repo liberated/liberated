@@ -205,7 +205,10 @@ qx.Class.define("rpcjs.dbif.Entity",
 
 
     /**
-     * Function to query for objects.
+     * Function to query for objects. The actual function that's used depends
+     * on which database driver gets installed. The database driver will
+     * register the function with us so user code can always use a common
+     * entry point to the function, here.
      *
      * @param classname {String}
      *   The name of the class, descended from rpcjs.dbif.Entity, of
@@ -234,9 +237,21 @@ qx.Class.define("rpcjs.dbif.Entity",
      *   If no criteria is supplied (undefined or null), then all objects of
      *   the specified classname will be returned.
      *
-     * @param resultCriteria {Map?}
-     *   A (possibly recursive) map which contains the following members:
-     *     <not yet implemented>
+     * @param resultCriteria {Array?}
+     *   An array of maps. Each map contains two members: "type" and
+     *   "value". The "type" member is one of "offset", "limit" or
+     *   "sort". When type is "offset", "value" indicates how many initial
+     *   objects to skip before the first one that is returned. When type is 
+     *   "limit", the "value" is how many result objects to return. When
+     *   "type" is "sort", the "value" is itself a map of fieldname/direction
+     *   pairs. Direction can be either "desc" or "asc".
+     *
+     *   An example resultCritieria value might be,
+     *   [
+     *     { type : "offset", value : 10 },
+     *     { type : "limit",  value : 5  },
+     *     { type : "sort",   value : { owner : "asc", uploadTime : "desc" }
+     *   ]
      *
      *   If no criteria is supplied (undefined or null), then the sort order
      *   is undefined, and all entities that match the search criteria will be
@@ -250,7 +265,10 @@ qx.Class.define("rpcjs.dbif.Entity",
     
 
     /**
-     * Function to put an object to the database.
+     * Function to put an object to the database. The actual function that's
+     * used depends on which database driver gets installed. The database
+     * driver will register the function with us so user code can always use a
+     * common entry point to the function, this.put().
      *
      * @param entity {rpcjs.dbif.Entity}
      *   The object whose database properties are to be written out.
@@ -271,8 +289,7 @@ qx.Class.define("rpcjs.dbif.Entity",
   members :
   {
     /**
-     * Put the db property data in this object to the database. The properties
-     * which are put are those which have member "db" : true.
+     * Put the db property data in this object to the database.
      */
     put : function()
     {
