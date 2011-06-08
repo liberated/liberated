@@ -33,6 +33,12 @@ qx.Class.define("rpcjs.sim.Simulator",
     /** List of handlers. Each will be tried in order of registration. */
     __handlers     : [],
 
+    /**
+     * Whether to process requests synchronously, or to better simulate a real
+     * transport by processing requests asynchronously. The former allows
+     * easier debugging.
+     */
+    SYNCHRONOUS : true,
 
     /**
      * Register a handler for a particular URL.
@@ -77,12 +83,20 @@ qx.Class.define("rpcjs.sim.Simulator",
       // Enqueue this request
       requestQueue.push(request);
       
-      // If this is the first item on the queue...
-      if (requestQueue.length == 1)
+      // Are we processing requests synchronously?
+      if (Simulator.SYNCHRONOUS)
       {
-        // ... then start a timer to process the queue immediately
-        Simulator.__timerManager.start(Simulator.__processQueue,
-                                       0, window, null, 0);
+        Simulator.__processQueue();
+      }
+      else
+      {
+        // If this is the first item on the queue...
+        if (requestQueue.length == 1)
+        {
+          // ... then start a timer to process the queue immediately
+          Simulator.__timerManager.start(Simulator.__processQueue,
+                                         0, window, null, 0);
+        }
       }
     },
 
