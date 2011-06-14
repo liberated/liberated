@@ -96,6 +96,10 @@ qx.Class.define("rpcjs.appengine.Dbif",
         throw new Error("No mapped entity type for " + classname);
       }
       
+      // Get the field names for this entity type
+      propertyTypes = rpcjs.dbif.Entity.propertyTypes;
+      fields = propertyTypes[type].fields;
+
       // Initialize our results array
       results = [];
 
@@ -112,6 +116,7 @@ qx.Class.define("rpcjs.appengine.Dbif",
         searchCriteria = this.constructor._buildCompositeKey(searchCriteria);
         // fall through
 
+      case "Number":
       case "String":
         // We've been given a key. Try to retrieve the specified entity.
         try
@@ -198,9 +203,19 @@ qx.Class.define("rpcjs.appengine.Dbif",
                   }
 
                   // Add a filter using the provided parameters
-                  query.addFilter(criterium.field, 
-                                  filterOp,
-                                  criterium.value);
+                  if (fields[criterium.field] == "Integer" ||
+                      fields[criterium.field] == "Key")
+                  {
+                    query.addFilter(criterium.field, 
+                                    filterOp,
+                                    java.lang.Integer(criterium.value));
+                  }
+                  else
+                  {
+                    query.addFilter(criterium.field, 
+                                    filterOp,
+                                    criterium.value);
+                  }
                   break;
 
                 default:
@@ -248,10 +263,6 @@ qx.Class.define("rpcjs.appengine.Dbif",
             });
         }
 
-        // Get the field names for this entity type
-        propertyTypes = rpcjs.dbif.Entity.propertyTypes;
-        fields = propertyTypes[type].fields;
-
         // Prepare to issue a query
         preparedQuery = datastore.prepare(query);
 
@@ -282,46 +293,47 @@ qx.Class.define("rpcjs.appengine.Dbif",
 
                switch(type)
                {
-                 case "Key":
-                 case "String":
-                 case "Date":
-                   return(String(value));
+               case "String":
+               case "Date":
+                 return(String(value));
 
-                 case "LongString":
-                   return value ? String(value.getValue()) : value;
+               case "LongString":
+                 return value ? String(value.getValue()) : value;
 
-                 case "Number":
-                   return(Number(value));
+               case "Key":
+               case "Integer":
+               case "Float":
+                 return(Number(value));
 
-                 case "KeyArray":
-                 case "StringArray":
-                 case "LongStringArray":
-                 case "NumberArray":
-                   if (value)
+               case "KeyArray":
+               case "StringArray":
+               case "LongStringArray":
+               case "NumberArray":
+                 if (value)
+                 {
+                   // Initialize the return array
+                   ret = [];
+
+                   // Determine the type of the elements
+                   var elemType = type.replace(/Array/, "");
+                   
+                   // Convert the elements to their proper types
+                   iterator = value.iterator();
+                   while (iterator.hasNext())
                    {
-                     // Initialize the return array
-                     ret = [];
-
-                     // Determine the type of the elements
-                     var elemType = type.replace(/Array/, "");
-                     
-                     // Convert the elements to their proper types
-                     iterator = value.iterator();
-                     while (iterator.hasNext())
-                     {
-                       // Call ourself with this element
-                       ret.push(arguments.callee(iterator.next(), elemType));
-                     }
-                     
-                     return ret;
+                     // Call ourself with this element
+                     ret.push(arguments.callee(iterator.next(), elemType));
                    }
-                   else
-                   {
-                     return [];
-                   }
+                   
+                   return ret;
+                 }
+                 else
+                 {
+                   return [];
+                 }
 
-                 default:
-                   throw new Error("Unknown property type: " + type);
+               default:
+                 throw new Error("Unknown property type: " + type);
                }
              })(dbResult.getProperty(fieldName), fields[fieldName]);
         }
@@ -373,6 +385,17 @@ qx.Class.define("rpcjs.appengine.Dbif",
         entityData[entity.getEntityKeyProperty()] = key;
         break;
         
+      case "Number":
+        // If there's no key, then generate a new key
+        if (isNaN(key))
+        {
+          key = String(rpcjs.appengine.Dbif.__nextKey++);
+        }
+        
+        // Save this key in the key field
+        entityData[entity.getEntityKeyProperty()] = key;
+        break;
+        
       case "Array":
         // Build a composite key string from these key values
         key = this.constructor._buildCompositeKey(key);
@@ -399,33 +422,57 @@ qx.Class.define("rpcjs.appengine.Dbif",
           (function(value, type)
            {
              var             i;
+             var             v;
+             var             conv;
              var             jArr;
 
              switch(type)
              {
-               case "Key":
-               case "String":
-               case "Number":
-                 return value;
+             case "String":
+             case "Float":
+               return value;
 
-               case "LongString":
-                 var Text = Packages.com.google.appengine.api.datastore.Text;
-                 return value ? new Text(value) : value;
+             case "Key":
+             case "Integer":
+               // Convert JavaScript Number to Java Long to avoid floating point
+               return java.lang.Long(String(value));
 
-               case "KeyArray":
-               case "StringArray":
-               case "LongStringArray":
-               case "NumberArray":
-                 jArr = new java.util.ArrayList();
-                 for (i = 0; value && i < value.length; i++)
+             case "LongString":
+               var Text = Packages.com.google.appengine.api.datastore.Text;
+               return value ? new Text(value) : value;
+
+             case "KeyArray":
+             case "StringArray":
+             case "LongStringArray":
+             case "IntegerArray":
+             case "FloatArray":
+               if (type == "IntegerArray")
+               {
+                 // integer Numbers must be converted to Java longs to avoid
+                 // having them saved as floating point values.
+                 conv = function(val)
                  {
-                   jArr.add(arguments.callee(value[i],
-                                             type.replace(/Array/, "")));
-                 }
-                 return jArr;
+                   return java.lang.Long(String(val));
+                 };
+               }
+               else
+               {
+                 conv = function(val)
+                 {
+                   return val;
+                 };
+               }
 
-               default:
-                 throw new Error("Unknown property type: " + type);
+               jArr = new java.util.ArrayList();
+               for (i = 0; value && i < value.length; i++)
+               {
+                 jArr.add(arguments.callee(conv(value[i]),
+                                           type.replace(/Array/, "")));
+               }
+               return jArr;
+
+             default:
+               throw new Error("Unknown property type: " + type);
              }
            })(entityData[fieldName], fields[fieldName]);
 

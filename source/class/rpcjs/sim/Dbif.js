@@ -173,7 +173,8 @@ qx.Class.define("rpcjs.sim.Dbif",
                     "\"" + criterium.value + "\" ";
                   break;
 
-                case "Number":
+                case "Integer":
+                case "Float":
                   ret +=
                     "entry[\"" + criterium.field + "\"] === " + criterium.value;
                   break;
@@ -186,7 +187,8 @@ qx.Class.define("rpcjs.sim.Dbif",
                     criterium.field + "\"], " + "\"" + criterium.value + "\")";
                   break;
 
-                case "NumberArray":
+                case "IntegerArray":
+                case "FloatArray":
                   ret +=
                   "qx.lang.Array.contains(entry[\"" + 
                     criterium.field + "\"], " + criterium.value + ")";

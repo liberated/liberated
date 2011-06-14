@@ -21,6 +21,7 @@ qx.Class.define("rpcjs.dbif.Entity",
     var             bComposite;
     var             query;
     var             field;
+    var             propertyType;
 
     // Call the superclass constructor
     this.base(arguments);
@@ -94,32 +95,29 @@ qx.Class.define("rpcjs.dbif.Entity",
     }
     
     // Fill in any missing properties
-    rpcjs.dbif.Entity.propertyTypes[entityType].forEach(
-      function(propertyType)
+    for (propertyType in rpcjs.dbif.Entity.propertyTypes[entityType].fields)
+    {
+      // If this property type is not represented in the entity data...
+      if (typeof(entityData[propertyType]) == "undefined")
       {
-        // If this property type is not represented in the entity data...
-        if (typeof(entityData[propertyType]) == "undefined")
-        {
-          // ... then add it, with a null value.
-          entityData[propertyType] = null;
-        }
-      });
+        // ... then add it, with a null value.
+        entityData[propertyType] = null;
+      }
+    }
     
     // If we're in debugging mode...
     if (qx.core.Environment.get("qx.debug"))
     {
       // ... then ensure that there are no properties that don't belong
-      entityData.forEach(
-        function(propertyType)
+      for (propertyType in entityData)
+      {
+        if (! (propertyType in
+               rpcjs.dbif.Entity.propertyTypes[entityType].fields))
         {
-          if (! qx.lang.Array.contains(
-                rpcjs.dbif.Entity.propertyTypes[entityType],
-                propertyType))
-          {
-            throw new Error("Unrecognized property (" + propertyType + ")" +
-                            " in entity data for type " + entityType + ".");
-          }
-        });
+          throw new Error("Unrecognized property (" + propertyType + ")" +
+                          " in entity data for type " + entityType + ".");
+        }
+      }
     }
   },
 
@@ -194,6 +192,7 @@ qx.Class.define("rpcjs.dbif.Entity",
       {
         // Add "uid" to the list of database properties.
         propertyTypes["uid"] = "Key";
+        keyField = "uid";
       }
 
       rpcjs.dbif.Entity.propertyTypes[entityType] = 
