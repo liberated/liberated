@@ -1,5 +1,6 @@
 /**
  * Copyright (c) 2011 Derrell Lipman
+ * Copyright (c) 2011 Reed Spool
  * 
  * License:
  *   LGPL: http://www.gnu.org/licenses/lgpl.html 
@@ -88,7 +89,9 @@ qx.Class.define("rpcjs.appengine.Dbif",
       var             result;
       var             results;
       var             propertyTypes;
-  
+      var             resultLimit;
+      var             resultOffset;
+      
       // Get the entity type
       type = rpcjs.dbif.Entity.entityTypeMap[classname];
       if (! type)
@@ -224,10 +227,11 @@ qx.Class.define("rpcjs.appengine.Dbif",
                 }
               })(searchCriteria);
         }
-
+        
+        
         // Assume the default set of result criteria (no limits, offset=0)
         options = Datastore.FetchOptions.Builder.withDefaults();
-
+        
         // If there are any result criteria specified...
         if (resultCriteria)
         {
@@ -238,28 +242,24 @@ qx.Class.define("rpcjs.appengine.Dbif",
               switch(criterium.type)
               {
               case "limit":
-                options.withLimit(criterium.value);
+                options.limit(criterium.value);
                 break;
 
               case "offset":
-                options.withOffset(criterium.value);
+                options.offset(criterium.value);
                 break;
 
               case "sort":
-                qx.lang.Object.getKeys(criterium.value).forEach(
-                  function(key)
-                  {
-                    query.addSort(key, 
-		                  {
-				    "asc"  : Query.SortDirection.DESCENDING,
-				    "desc" : Query.SortDirection.ASCENDING
-				  }[criterium.value[key]]);
-                  });
+                query.addSort(criterium.field,
+                              {
+                                "asc"  : Query.SortDirection.ASCENDING,
+                                "desc" : Query.SortDirection.DESCENDING
+                              }[criterium.order]);
                 break;
-
+                
               default:
                 throw new Error("Unrecognized result criterium type: " +
-                                criterium.type);
+                criterium.type);
               }
             });
         }
