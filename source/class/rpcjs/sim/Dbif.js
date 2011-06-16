@@ -116,6 +116,7 @@ qx.Class.define("rpcjs.sim.Dbif",
 
         // fall through
 
+      case "Number":
       case "String":
         if (typeof dbObjectMap[searchCriteria] !== "undefined")
         {
@@ -200,7 +201,7 @@ qx.Class.define("rpcjs.sim.Dbif",
                 break;
 
               default:
-                throw new Error("Unrceognized criterium type: " +
+                throw new Error("Unrecognized criterium type: " +
                                 criterium.type);
               }
 
