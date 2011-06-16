@@ -1,5 +1,6 @@
 /**
  * Copyright (c) 2011 Derrell Lipman
+ * Copyright (c) 2011 Reed Spool
  * 
  * License:
  *   LGPL: http://www.gnu.org/licenses/lgpl.html 
@@ -249,34 +250,31 @@ qx.Class.define("rpcjs.sim.Dbif",
               
             case "sort":
               builtSort = [ "var v1, v2;" ];
-              sortKeys = qx.lang.Object.getKeys(criterium.value);
-              sortKeys.forEach(
-                function(key)
-                {
-                  {
-                    builtSort.push("v1 = a['" + key + "'];");
-                    builtSort.push("v2 = b['" + key + "'];");
-                    if (criterium.value[key] === "asc")
-                    {
-                      builtSort.push("if (v1 < v2) return -1;");
-                      builtSort.push("if (v1 > v2) return 1;");
-                    }
-                    else if (criterium.value[key] === "desc")
-                    {
-                      builtSort.push("if (v1 > v2) return -1;");
-                      builtSort.push("if (v1 < v2) return 1;");
-                    }
-                    else
-                    {
-                      throw new Error("Unexpected sort order for " + key +
-                                      ": " + criterium.value[key]);
-                    }
-                  }
-                });
+              
+              builtSort.push("v1 = a['" + criterium.field + "'];");
+              builtSort.push("v2 = b['" + criterium.field + "'];");
+              
+              if ( criterium.order === "asc" )
+              {
+                builtSort.push("if (v1 < v2) return -1;");
+                builtSort.push("if (v1 > v2) return 1;");
+              }
+              else if (criterium.order === "desc" )
+              {
+                builtSort.push("if (v1 > v2) return -1;");
+                builtSort.push("if (v1 < v2) return 1;");
+              }
+              else
+              {
+                throw new Error(
+                  "Unexpected sort order for " + criterium.field + ": " + 
+                  criterium.order);
+              }
+              
               builtSort.push("return 0;");
               sortFunction = new Function("a", "b", builtSort.join("\n"));
               break;
-
+              
             default:
               throw new Error("Unrecognized result criterium type: " +
                               criterium.type);

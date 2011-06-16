@@ -1,5 +1,6 @@
 /**
  * Copyright (c) 2011 Derrell Lipman
+ * Copyright (c) 2011 Reed Spool
  * 
  * License:
  *   LGPL: http://www.gnu.org/licenses/lgpl.html 
@@ -237,25 +238,30 @@ qx.Class.define("rpcjs.dbif.Entity",
      *   the specified classname will be returned.
      *
      * @param resultCriteria {Array?}
-     *   An array of maps. Each map contains two members: "type" and
-     *   "value". The "type" member is one of "offset", "limit" or
-     *   "sort". When type is "offset", "value" indicates how many initial
-     *   objects to skip before the first one that is returned. When type is 
-     *   "limit", the "value" is how many result objects to return. When
-     *   "type" is "sort", the "value" is itself a map of fieldname/direction
-     *   pairs. Direction can be either "desc" or "asc".
+     *   An array of maps. Each map contains 2 or more members: a "type" and one
+     *   or more type dependent members. The type "offset" necessitates a member
+     *   "value" with an integer value specifying how many initial objects to
+     *   skip from the result objects. The offset must be non-negative. The type
+     *   "limit" also requires a member "value" whose integer value is the total
+     *   number of result objects to return. The limit must be greater than 
+     *   zero. When the type is "sort", two members must be present:
+     *   "field" and "order". The "field" is a string specifying the result
+     *   object member on which to sort. The "order" is also a string, either 
+     *   "asc" or "desc".
      *
-     *   An example resultCritieria value might be,
+     *   There may be zero or one of the maps of type "limit" or "offset". Of
+     *   the maps of type "sort", there may be any number, and their order in
+     *   the array is the order the sort is applied on each field. 
+     * 
+     *   An example resultCriteria value might be,
      *   [
      *     { type : "offset", value : 10 },
      *     { type : "limit",  value : 5  },
-     *     { type : "sort",   value : { owner : "asc", uploadTime : "desc" }
+     *     { type : "sort",   field : "uploadTime", order : "desc" },
+     *     { type : "sort",   field : "numLikes" , order : "asc" }
      *   ]
-     *
-     *   If no criteria is supplied (undefined or null), then the sort order
-     *   is undefined, and all entities that match the search criteria will be
-     *   returned.
-     *
+     * 
+     * 
      * @return {Array}
      *   An array of maps, i.e. native objects (not of Entity objects!)
      *   containing the data resulting from the query.

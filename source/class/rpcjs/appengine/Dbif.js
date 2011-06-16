@@ -250,9 +250,10 @@ qx.Class.define("rpcjs.appengine.Dbif",
                   function(key)
                   {
                     query.addSort(key, 
-                                  (criterium.value[key] === "desc"
-                                   ? Query.SortDirection.DESCENDING
-                                   : Query.SortDirection.ASCENDING));
+		                  {
+				    "asc"  : Query.SortDirection.DESCENDING,
+				    "desc" : Query.SortDirection.ASCENDING
+				  }[criterium.value[key]]);
                   });
                 break;
 
