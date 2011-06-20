@@ -84,6 +84,7 @@ qx.Class.define("rpcjs.appengine.Dbif",
       var             options;
       var             type;
       var             fields;
+      var             fieldName;
       var             dbResult;
       var             dbResults;
       var             result;
@@ -116,7 +117,9 @@ qx.Class.define("rpcjs.appengine.Dbif",
       {
       case "Array":
         // Build the composite key
-        searchCriteria = this.constructor._buildCompositeKey(searchCriteria);
+        searchCriteria = 
+          rpcjs.appengine.Dbif.._buildCompositeKey(searchCriteria);
+
         // fall through
 
       case "Number":
@@ -366,6 +369,7 @@ qx.Class.define("rpcjs.appengine.Dbif",
       var             type = entity.getEntityType();
       var             propertyName;
       var             fields;
+      var             fieldName;
       var             data;
       
       // Ensure that there's either a real key or no key; not empty string
