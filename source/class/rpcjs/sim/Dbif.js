@@ -103,6 +103,15 @@ qx.Class.define("rpcjs.sim.Dbif",
       
       // Get the database sub-section for the specified classname/type
       dbObjectMap = rpcjs.sim.Dbif.Database[type];
+      
+      if (qx.core.Environment.get("qx.debug"))
+      {
+        if (! dbObjectMap)
+        {
+          throw new Error("Type '" + type + "' " +
+                          "was not found in the simulation database.");
+        }
+      }
 
       // Initialize our results array
       results = [];
