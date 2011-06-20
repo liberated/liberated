@@ -118,7 +118,7 @@ qx.Class.define("rpcjs.appengine.Dbif",
       case "Array":
         // Build the composite key
         searchCriteria = 
-          rpcjs.appengine.Dbif.._buildCompositeKey(searchCriteria);
+          rpcjs.appengine.Dbif._buildCompositeKey(searchCriteria);
 
         // fall through
 
