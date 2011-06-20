@@ -113,7 +113,7 @@ qx.Class.define("rpcjs.sim.Dbif",
       {
       case "Array":
         // Join the field values using a known field separator
-        searchCriteria = this.constructor._buildCompositeKey(searchCriteria);
+        searchCriteria = rpcjs.sim.Dbif._buildCompositeKey(searchCriteria);
 
         // fall through
 
@@ -325,6 +325,17 @@ qx.Class.define("rpcjs.sim.Dbif",
       case "Null":
         // Generate a new key
         key = String(rpcjs.sim.Dbif.__nextKey++);
+        
+        // Save this key in the key field
+        entityData[entity.getEntityKeyProperty()] = key;
+        break;
+        
+      case "Number":
+        // If there's no key, then generate a new key
+        if (isNaN(key))
+        {
+          key = String(this.constructor.__nextKey++);
+        }
         
         // Save this key in the key field
         entityData[entity.getEntityKeyProperty()] = key;

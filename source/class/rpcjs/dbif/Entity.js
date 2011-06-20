@@ -10,6 +10,7 @@
 qx.Class.define("rpcjs.dbif.Entity",
 {
   extend : qx.core.Object,
+  type   : "abstract",
   
   construct : function(entityType, entityKey)
   {
@@ -266,7 +267,14 @@ qx.Class.define("rpcjs.dbif.Entity",
      *   An array of maps, i.e. native objects (not of Entity objects!)
      *   containing the data resulting from the query.
      */
-    query : null,
+    query : function(classname, searchCriteria, resultCriteria)
+    {
+      // This is a temporary place holder.
+      // 
+      // This method is replaced by the query method of the specific database
+      // that is being used.
+      return [];
+    },
     
 
     /**
@@ -278,7 +286,13 @@ qx.Class.define("rpcjs.dbif.Entity",
      * @param entity {rpcjs.dbif.Entity}
      *   The object whose database properties are to be written out.
      */
-    __put : null,
+    __put : function(entity)
+    {
+      // This is a temporary place holder.
+      // 
+      // This method is replaced by the put method of the specific database
+      // that is being used.
+    },
 
 
     /** Register a put and query function, specific to a database */
@@ -338,6 +352,10 @@ qx.Class.define("rpcjs.dbif.Entity",
     {
       if (qx.lang.Type.isArray(value))
       {
+/*
+ * At the time that setEntityKeyProperty() is called from the Obj*
+ * constructor, the entity type has not yet been set.
+
         var properties = rpcjs.dbif.Entity.propertyTypes[this.getEntityType()];
         value.forEach(
           function(subcomponent)
@@ -347,6 +365,7 @@ qx.Class.define("rpcjs.dbif.Entity",
               throw new Error("Unexpected property in key: " + subcomponent);
             }
           });
+*/
       }
     }
   }
