@@ -365,9 +365,11 @@ qx.Class.define("rpcjs.appengine.Dbif",
       var             datastore;
       var             Datastore;
       var             entityData = entity.getData();
-      var             key = entityData[entity.getEntityKeyProperty()];
+      var             keyProperty = entity.getEntityKeyProperty();
+      var             key = entityData[keyProperty];
       var             type = entity.getEntityType();
       var             propertyName;
+      var             propertyType;
       var             fields;
       var             fieldName;
       var             data;
@@ -378,25 +380,35 @@ qx.Class.define("rpcjs.appengine.Dbif",
         throw new Error("Found disallowed empty key");
       }
 
+      // Get the field names for this entity type
+      fields = entity.getDatabaseProperties().fields;
+
       // If there's no key yet...
       switch(qx.lang.Type.getClass(key))
       {
       case "Undefined":
       case "Null":
-        // Generate a new key
-        key = String(rpcjs.appengine.Dbif.__nextKey++);
+        // Generate a new key. Determine what type of key to use.
+        switch(fields[keyProperty])
+        {
+        case "Key":
+        case "Number":
+          key = rpcjs.appengine.Dbif.__nextKey++;
+          break;
+          
+        case "String":
+          key = String(rpcjs.appengine.Dbif.__nextKey++);
+          break;
+          
+        default:
+          throw new Error("No way to autogenerate key");
+        }
         
         // Save this key in the key field
-        entityData[entity.getEntityKeyProperty()] = key;
+        entityData[keyProperty] = key;
         break;
         
       case "Number":
-        // If there's no key, then generate a new key
-        if (isNaN(key))
-        {
-          key = String(rpcjs.appengine.Dbif.__nextKey++);
-        }
-        
         // Save this key in the key field
         entityData[entity.getEntityKeyProperty()] = key;
         break;
@@ -419,7 +431,6 @@ qx.Class.define("rpcjs.appengine.Dbif",
       dbEntity = new Packages.com.google.appengine.api.datastore.Entity(dbKey);
 
       // Add each property to the database entity
-      fields = entity.getDatabaseProperties().fields;
       for (fieldName in fields)
       {
         // Map the Java field data to appropriate JavaScript data

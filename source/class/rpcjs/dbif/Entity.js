@@ -34,18 +34,6 @@ qx.Class.define("rpcjs.dbif.Entity",
     // Get the key field name.
     keyField = this.getEntityKeyProperty();
     
-    // The key field can be a string or an array. Ensure that the types match
-    // between the key field and the entity key.
-    if (qx.core.Environment.get("qx.debug"))
-    {
-      if (typeof(keyField) != typeof(entityKey) ||
-          (qx.lang.Type.getClass(keyField) == "Array" &&
-           keyField.length != entityKey.length))
-      {
-        throw new Error("Entity key does not match key type");
-      }
-    }
-    
     // Determine whether we have a composite key
     bComposite = (qx.lang.Type.getClass(keyField) === "Array");
 
