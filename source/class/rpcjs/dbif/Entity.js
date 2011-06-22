@@ -213,15 +213,16 @@ qx.Class.define("rpcjs.dbif.Entity",
      *               member, which is an array of the critieria to which the
      *               specified operation is applied.
      *
-     *               An optional "filterOp" member may also be provided. If
-     *               none is provided, the requested operation is assumed to be
-     *               equality. Any of the following values may be provided for
-     *               the "filterOp" member: "<", "<=", "=", ">", ">=", "!=".
-     *
      *       "element" -- Search by specific field in the object. The
      *                    "field" member must be provided, to specify which
      *                    field, and a "value" member must be specified, to
      *                    indicate what value must be in that field.
+     *
+     *                    An optional "filterOp" member may also be
+     *                    provided. If none is provided, the requested
+     *                    operation is assumed to be equality. Any of the
+     *                    following values may be provided for the "filterOp"
+     *                    member: "<", "<=", "=", ">", ">=", "!=".
      *
      *   If no criteria is supplied (undefined or null), then all objects of
      *   the specified classname will be returned.
@@ -241,7 +242,7 @@ qx.Class.define("rpcjs.dbif.Entity",
      *   There may be zero or one of the maps of type "limit" or "offset". Of
      *   the maps of type "sort", there may be any number, and their order in
      *   the array is the order the sort is applied on each field. 
-     * 
+     *
      *   An example resultCriteria value might be,
      *   [
      *     { type : "offset", value : 10 },
@@ -249,8 +250,8 @@ qx.Class.define("rpcjs.dbif.Entity",
      *     { type : "sort",   field : "uploadTime", order : "desc" },
      *     { type : "sort",   field : "numLikes" , order : "asc" }
      *   ]
-     * 
-     * 
+     *
+     *
      * @return {Array}
      *   An array of maps, i.e. native objects (not of Entity objects!)
      *   containing the data resulting from the query.
