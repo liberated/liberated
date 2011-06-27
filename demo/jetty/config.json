@@ -1,0 +1,130 @@
+{
+  "name"    : "RpcJs Demo",
+
+  "include" :
+  [
+    {
+      "path" : "${QOOXDOO_PATH}/tool/data/config/application.json"
+    }
+  ],
+
+  "export" :
+  [
+    "api",
+    "api-data",
+    "build",
+    "clean",
+    "distclean",
+    "fix",
+    "info",
+    "inspector",
+    "lint",
+    "migration",
+    "pretty",
+    "profiling",
+    "source",
+    "source-all",
+    "source-hybrid",
+    "simulation-build",
+    "simulation-run",
+    "test",
+    "test-source",
+    "translation",
+    "qxlib-noopt"
+  ],
+  
+  "default-job" : "source",
+
+  "let" :
+  {
+    "APPLICATION"  : "rpcjs.demo",
+    "QOOXDOO_PATH" : "../../../../qooxdoo/1.4",
+    "QXTHEME"      : "rpcjs.demo.theme.Theme",
+    "API_EXCLUDE"  : ["qx.test.*", "${APPLICATION}.theme.*", "${APPLICATION}.test.*"],
+    "LOCALES"      : [ "en" ],
+    "CACHE"        : "${TMPDIR}/qx${QOOXDOO_VERSION}/cache",
+    "ROOT"         : "."
+  },
+
+  "jobs" :
+  {
+    "qxlib" : 
+    {
+      "library" :
+      [
+        {
+          "manifest" : "${QOOXDOO_PATH}/framework/Manifest.json"
+        },
+        {
+          "manifest" : "../../Manifest.json"
+        }
+      ],
+
+      "extend" : [ "cache" ],
+      
+      "include" : 
+      [
+        "qx.Class",
+        "qx.Mixin",
+        "qx.Interface",
+        "rpcjs.rpc.Server",
+        "rpcjs.jetty.Rpc"
+      ],
+      
+      "exclude" :
+      [
+        "qx.event.GlobalError"
+      ],
+
+      "environment" :
+      {
+        "qx.debug" : false,
+        "qx.aspects" : false,
+        "qx.globalErrorHandling" : false
+      },
+
+      "compile-options" :
+      {
+        "paths" :
+        {
+          "loader-template" : "${QOOXDOO_PATH}/tool/data/generator/oo.loader.tmpl.js"
+        },
+        "uris" :
+        {
+          "script"   : ".",
+          "resource" : "."
+        }
+      }
+    },
+
+    "qxlib-noopt" : 
+    {
+      "desc" : "a basic qooxdoo OO library (non-optimized)",
+      "extend" : [ "qxlib" ],
+      
+      "compile-options" :
+      {
+        "paths" :
+        {
+          "file" : "build/script/qxlib-noopt.js"
+        },
+        "code" :
+        {
+          "format"   : true,
+          "optimize" : [ ]
+        }
+      },
+      "compile" : { "type" : "build" }
+    },
+
+    "libraries" : 
+    {
+      "library" :
+      [
+        {
+          "manifest" : "../../Manifest.json"
+        }
+      ]
+    }
+  }
+}
