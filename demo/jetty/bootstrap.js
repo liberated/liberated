@@ -4,6 +4,9 @@ importPackage(Packages.javax.servlet.http);
 
 load("build/script/qxlib-noopt.js");
 
+var __arguments = arguments;
+
+
 (function()
  {
    var             rpc;
@@ -184,7 +187,7 @@ load("build/script/qxlib-noopt.js");
    server.setHandler(handlers);
 
    // Retrieve our services table
-   load("services.js");
+   load(__arguments[0] || "services.js");
    var services = getServices();
 
    // Initialize the remote procedure call server itself
