@@ -1,9 +1,20 @@
+/*
+ * Configure and start a Jetty server
+ * 
+ * Copyright (c) 2011 Derrell Lipman
+ * 
+ * License:
+ *   LGPL: http://www.gnu.org/licenses/lgpl.html 
+ *   EPL: http://www.eclipse.org/org/documents/epl-v10.php
+ */
+
 importPackage(Packages.org.eclipse.jetty.server);
 importPackage(Packages.org.eclipse.jetty.server.handler);
 importPackage(Packages.javax.servlet.http);
 
 load("build/script/qxlib-noopt.js");
 
+// We'll need global arguments within the following function.
 var __arguments = arguments;
 
 
