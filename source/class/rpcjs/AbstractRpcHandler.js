@@ -45,7 +45,7 @@ qx.Class.define("rpcjs.AbstractRpcHandler",
      *  method to be called, and must return true to allow the function to be
      *  called, or false otherwise, to indicate permission denied.
      */
-    _authenticationFunction : null,
+    authenticationFunction : null,
 
     /**
      * The service factory takes a method name and attempts to produce a
@@ -70,24 +70,6 @@ qx.Class.define("rpcjs.AbstractRpcHandler",
     {
       var             method;
 
-      // Validate allowability of calling this function
-      if (rpcjs.AbstractRpcHandler._authenticationFunction &&
-          !rpcjs.AbstractRpcHandler._authenticationFunction(fqMethodName))
-      {
-        // No such method.
-        if (protocol == "qx1")
-        {
-          error.setCode(
-            qx.io.remote.RpcError.qx1.error.server.PermissionDenied);
-        }
-        else
-        {
-          error.setCode(qx.io.remote.RpcError.v2.error.PermissionDenied);
-        }
-        error.setMessage("Permission denied.");
-        return null;
-      }
-
       // Append the fully-qualified method name to the services map and
       // evaluate it in hopes of getting a method reference.
       try
@@ -106,6 +88,24 @@ qx.Class.define("rpcjs.AbstractRpcHandler",
         if (! method)
         {
           throw new Error("No such method");
+        }
+
+        // Validate allowability of calling this function
+        if (rpcjs.AbstractRpcHandler.authenticationFunction &&
+            !rpcjs.AbstractRpcHandler.authenticationFunction(fqMethodName))
+        {
+          // No such method.
+          if (protocol == "qx1")
+          {
+            error.setCode(
+              qx.io.remote.RpcError.qx1.error.server.PermissionDenied);
+          }
+          else
+          {
+            error.setCode(qx.io.remote.RpcError.v2.error.PermissionDenied);
+          }
+          error.setMessage("Permission denied.");
+          return null;
         }
       }
       catch(e)
