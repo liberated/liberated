@@ -147,6 +147,8 @@ qx.Class.define("rpcjs.rpc.Server",
       responses = requests.map(
         function(request)
         {
+          var             ret;
+
           // Ensure that this is a valid request object
           if (! qx.lang.Type.isObject(request))
           {
@@ -405,11 +407,19 @@ qx.Class.define("rpcjs.rpc.Server",
             error = qx.lang.Json.parse(result.stringify());
 
             // Build the error response
-            return qx.lang.Json.stringify(
+            ret = 
               {
                 id    : request.id,
                 error : error
-              });
+              };
+            
+            // If this is v2, we need to add the indicator of such.
+            if (protocol == "v2")
+            {
+              ret.jsonrpc = "2.0";
+            }
+
+            return qx.lang.Json.stringify(ret);
           }
 
           // Was this a notification?
@@ -420,11 +430,19 @@ qx.Class.define("rpcjs.rpc.Server",
           }
           
           // We have a standard result. Stringify and return a proper response.
-          return qx.lang.Json.stringify(
+          ret = 
             {
               id     : request.id,
               result : result
-            });
+            };
+
+          // If this is v2, we need to add the indicator of such.
+          if (protocol == "v2")
+          {
+            ret.jsonrpc = "2.0";
+          }
+
+          return qx.lang.Json.stringify(ret);
         },
         this);
       
