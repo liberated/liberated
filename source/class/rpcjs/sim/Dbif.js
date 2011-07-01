@@ -399,11 +399,22 @@ qx.Class.define("rpcjs.sim.Dbif",
      *
      * @param fService {Function}
      *   The function which implements the given service name.
+     * 
+     * @param paramNames {Array}
+     *   The names of the formal parameters, in order.
      */
-    registerService : function(serviceName, fService)
+    registerService : function(serviceName, fService, paramNames)
     {
-      this.__services[this.__rpcKey].features[serviceName] = 
-        qx.lang.Function.bind(fService, this);
+      var             f;
+      
+      // Use this object as the context for the service
+      f = qx.lang.Function.bind(fService, this);
+      
+      // Save the parameter names as a property of the function object
+      f.parameterNames = paramNames;
+
+      // Save the service
+      this.__services[this.__rpcKey].features[serviceName] = f;
     },
 
     /** The top-level RPC key, used to index into this.__services */

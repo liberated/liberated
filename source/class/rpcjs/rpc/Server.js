@@ -91,6 +91,7 @@ qx.Class.define("rpcjs.rpc.Server",
       var             fqMethod; // fully-qualified method name
       var             service;  // service function to call
       var             result;   // result of calling service function
+      var             params;   // the parameter list for the RPC
       
       try
       {
@@ -216,7 +217,37 @@ qx.Class.define("rpcjs.rpc.Server",
           });
       }
       
+      // Were we given a parameter array, or a parameter map, or null?
+      if (request.params === null)
+      {
+        // No provided parameters is equivalent to an empty parameter list
+        params = [];
+      }
+      else if (qx.lang.Type.isArray(request.params))
+      {
+        // Use the provided parameter list
+        params = request.params;
+      }
+      else if (qx.lang.Type.isObject(request.params))
+      {
+        // Does this service allow a map of parameters?
+        if (service.parameterNames)
+        {
+          // Yup. Initialize to an empty parameter list
+          params = [];
         
+          // Map the arguments into the parameter array. (We are forgiving of
+          // members of request.params that are not in the formal parameter
+          // list. We just ignore them.)
+          service.parameterNames.forEach(
+            function(paramName)
+            {
+              // Add the parameter. If it's undefined, so be it.
+              params.push(request.params[paramName]);
+            });
+        }
+      }
+
       if (protocol == "qx1")
       {
         // Future errors are almost certainly of Application origin
@@ -226,8 +257,8 @@ qx.Class.define("rpcjs.rpc.Server",
       // We should now have a service function to call. Call it.
       try
       {
-        request.params.push(error); // provide error object as last param
-        result = service.apply(window, request.params);
+        params.push(error); // provide the error object as the last parameter.
+        result = service.apply(window, params);
       }
       catch(e)
       {
