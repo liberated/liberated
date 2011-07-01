@@ -85,6 +85,7 @@ qx.Class.define("rpcjs.rpc.Server",
     processRequest : function(jsonInput)
     {
       var             timer;      // timer manager object
+      var             ret;        // error return object
       var             bBatch;     // whether a batch request is received
       var             requests;   // the parsed input request
       var             error;      // an error object
@@ -100,6 +101,9 @@ qx.Class.define("rpcjs.rpc.Server",
       // Get a timer instance
       timer = qx.util.TimerManager.getInstance();
 
+      // Assume protocol is 2.0 until we (might) discover otherwise
+      protocol = "2.0";
+
       try
       {
         // Parse the JSON
@@ -110,11 +114,18 @@ qx.Class.define("rpcjs.rpc.Server",
         // We couldn't parse the request.
         // Get a new version 2.0 error object.
         error = new rpcjs.rpc.error.Error("2.0");
-        error.setCode(qx.io.remote.RpcError.v2.error.InvalidRequest);
+        error.setCode(qx.io.remote.RpcError.v2.error.ParseError);
         error.setMessage("Could not parse request");
 
-        // Give 'em the error.
-        return error.stringify();
+        // Build the error response
+        ret = 
+          {
+            jsonrpc : "2.0",
+            id      : null,
+            error   : qx.lang.Json.parse(error.stringify())
+          };
+
+        return qx.lang.Json.stringify(ret);
       }
 
       // Determine if this is normal or batch mode
@@ -122,6 +133,25 @@ qx.Class.define("rpcjs.rpc.Server",
       {
         // It's batch mode.
         bBatch = true;
+        
+        // Ensure that there's at least one element in the array
+        if (requests.length === 0)
+        {
+          // Get a new version 2.0 error object.
+          error = new rpcjs.rpc.error.Error("2.0");
+          error.setCode(qx.io.remote.RpcError.v2.error.InvalidRequest);
+          error.setMessage("Empty batch array");
+
+          // Build the error response
+          ret = 
+            {
+              jsonrpc : "2.0",
+              id      : null,
+              error   : qx.lang.Json.parse(error.stringify())
+            };
+
+          return qx.lang.Json.stringify(ret);
+        }
       }
       else if (qx.lang.Type.isObject(requests))
       {
@@ -139,8 +169,15 @@ qx.Class.define("rpcjs.rpc.Server",
         error.setMessage("Unrecognized request type");
         error.setData("Expected an array or an object");
 
-        // Give 'em the error.
-        return error.stringify();
+        // Build the error response
+        ret = 
+          {
+            jsonrpc : "2.0",
+            id      : null,
+            error   : qx.lang.Json.parse(error.stringify())
+          };
+
+        return qx.lang.Json.stringify(ret);
       }
 
       // For each request in the batch (or the single non-batch request)...
@@ -148,6 +185,10 @@ qx.Class.define("rpcjs.rpc.Server",
         function(request)
         {
           var             ret;
+          var             id;
+
+          // Get the id value to use in error responses
+          id = typeof request.id == "undefined" ? null : request.id;
 
           // Ensure that this is a valid request object
           if (! qx.lang.Type.isObject(request))
@@ -158,8 +199,15 @@ qx.Class.define("rpcjs.rpc.Server",
             error.setMessage("Unrecognized request");
             error.setData("Expected an object");
 
-            // Give 'em the error.
-            return error.stringify();
+            // Build the error response
+            ret = 
+              {
+                jsonrpc : "2.0",
+                id      : id,
+                error   : qx.lang.Json.parse(error.stringify())
+              };
+
+            return ret;
           }
 
           // Determine which protocol to use. Is there a jsonrpc member?
@@ -175,8 +223,15 @@ qx.Class.define("rpcjs.rpc.Server",
               error.setMessage("'jsonrpc' member must be \"2.0\".");
               error.setData("Found value " + request.jsonrpc + "in 'jsonrpc'.");
 
-              // Give 'em the error.
-              return error.stringify();
+              // Build the error response
+              ret = 
+                {
+                  jsonrpc : "2.0",
+                  id      : id,
+                  error   : qx.lang.Json.parse(error.stringify())
+                };
+
+              return ret;
             }
 
             // Validate that the method is a string
@@ -187,12 +242,20 @@ qx.Class.define("rpcjs.rpc.Server",
                                "incorrect type");
               error.setData("Method name must be a string.");
 
-              // Give 'em the error.
-              return error.stringify();
+              // Build the error response
+              ret = 
+                {
+                  jsonrpc : "2.0",
+                  id      : id,
+                  error   : qx.lang.Json.parse(error.stringify())
+                };
+
+              return ret;
             }
 
-            // Validate that the params member is null, an object, or an array
-            if (request.params !== null &&
+            // Validate that the params member is undefined, an object, or an
+            // array.
+            if (typeof(request.params) != "undefined" &&
                 ! qx.lang.Type.isObject(request.params) &&
                 ! qx.lang.Type.isArray(request.params))
             {
@@ -200,8 +263,15 @@ qx.Class.define("rpcjs.rpc.Server",
               error.setMessage("JSON-RPC params is missing or incorrect type");
               error.setData("params must be null, an object, or an array.");
 
-              // Give 'em the error.
-              return error.stringify();
+              // Build the error response
+              ret = 
+                {
+                  jsonrpc : "2.0",
+                  id      : id,
+                  error   : qx.lang.Json.parse(error.stringify())
+                };
+
+              return ret;
             }
 
             // We have what appears to be a valid version 2.0 request
@@ -214,8 +284,15 @@ qx.Class.define("rpcjs.rpc.Server",
             error.setMessage("JSON-RPC params is missing or incorrect type");
             error.setData("params must be null, an object, or an array.");
 
-            // Give 'em the error.
-            return error.stringify();
+            // Build the error response
+            ret = 
+              {
+                jsonrpc : "2.0",
+                id      : id,
+                error   : qx.lang.Json.parse(error.stringify())
+              };
+
+            return ret;
           }
           else
           {
@@ -230,8 +307,14 @@ qx.Class.define("rpcjs.rpc.Server",
               error.setCode(qx.io.remote.RpcError.v2.error.InvalidRequest);
               error.setMessage("Missing service, method, or params");
 
-              // Give 'em the error.
-              return error.stringify();
+              // Build the error response
+              ret = 
+                {
+                  id      : id,
+                  error   : qx.lang.Json.parse(error.stringify())
+                };
+
+              return ret;
             }
 
             // Get a qooxdoo-modified version 1 error object
@@ -266,11 +349,25 @@ qx.Class.define("rpcjs.rpc.Server",
                 "2.0" : qx.io.remote.RpcError.v2.error.MethodNotFound
               }[protocol]);
             error.setMessage("Illegal character found in service name.");
-            return error.stringify();
+
+            // Build the error response
+            ret = 
+              {
+                id      : id,
+                error   : qx.lang.Json.parse(error.stringify())
+              };
+
+            // If this is v2, we need to add the indicator of such.
+            if (protocol == "2.0")
+            {
+              ret.jsonrpc = "2.0";
+            }
+
+            return ret;
           }
 
           // Next, ensure there are no double dots
-          if (request.service.indexOf("..") != -1)
+          if (fqMethod.indexOf("..") != -1)
           {
             error.setCode(
               {
@@ -279,7 +376,21 @@ qx.Class.define("rpcjs.rpc.Server",
               }[protocol]);
             error.setMessage("Illegal use of two consecutive dots " +
                              "in service name.");
-            return error.stringify();
+
+            // Build the error response
+            ret = 
+              {
+                id      : id,
+                error   : qx.lang.Json.parse(error.stringify())
+              };
+
+            // If this is v2, we need to add the indicator of such.
+            if (protocol == "2.0")
+            {
+              ret.jsonrpc = "2.0";
+            }
+
+            return ret;
           }
 
           // Use the registered callback to get a service function associated
@@ -289,7 +400,14 @@ qx.Class.define("rpcjs.rpc.Server",
           // Was there an error?
           if (service == null)
           {
-            // Yup. Give 'em the error.
+            // Yup. Is this a notification?
+            if (typeof request.id == "undefined")
+            {
+              // Yes. Just return undefined so the error is ignored.
+              return undefined;
+            }
+
+            // Give 'em the error.
             // The error class knows how to stringify itself, but we need a map.
             // Go both directions, to obtain the map.
             error.setCode(
@@ -298,14 +416,21 @@ qx.Class.define("rpcjs.rpc.Server",
                 "2.0" : qx.io.remote.RpcError.v2.error.MethodNotFound
               }[protocol]);
             error.setMessage("Method " + fqMethod + " not found.");
-            error = qx.lang.Json.parse(error.stringify());
 
             // Build the error response
-            return qx.lang.Json.stringify(
+            ret = 
               {
                 id    : request.id,
-                error : error
-              });
+                error : qx.lang.Json.parse(error.stringify())
+              };
+            
+            // If this is v2, we need to add the indicator of such.
+            if (protocol == "2.0")
+            {
+              ret.jsonrpc = "2.0";
+            }
+
+            return ret;
           }
 
           // Were we given a parameter array, or a parameter map, or null?
@@ -418,22 +543,21 @@ qx.Class.define("rpcjs.rpc.Server",
             // Yup. Stringify and return it.
             // The error class knows how to stringify itself, but we need a map.
             // Go both directions, to obtain the map.
-            error = qx.lang.Json.parse(result.stringify());
 
             // Build the error response
             ret = 
               {
                 id    : request.id,
-                error : error
+                error : qx.lang.Json.parse(error.stringify())
               };
             
             // If this is v2, we need to add the indicator of such.
-            if (protocol == "v2")
+            if (protocol == "2.0")
             {
               ret.jsonrpc = "2.0";
             }
 
-            return qx.lang.Json.stringify(ret);
+            return ret;
           }
 
           // We have a standard result. Stringify and return a proper response.
@@ -444,12 +568,12 @@ qx.Class.define("rpcjs.rpc.Server",
             };
 
           // If this is v2, we need to add the indicator of such.
-          if (protocol == "v2")
+          if (protocol == "2.0")
           {
             ret.jsonrpc = "2.0";
           }
 
-          return qx.lang.Json.stringify(ret);
+          return ret;
         },
         this);
       
@@ -468,7 +592,9 @@ qx.Class.define("rpcjs.rpc.Server",
       }
 
       // Give 'em the response(s)
-      return bBatch ? responses : responses[0];
+      return (bBatch
+              ? qx.lang.Json.stringify(responses)
+              : qx.lang.Json.stringify(responses[0]));
     }
   }
 });
