@@ -292,6 +292,12 @@ qx.Class.define("rpcjs.rpc.Server",
             // Yup. Give 'em the error.
             // The error class knows how to stringify itself, but we need a map.
             // Go both directions, to obtain the map.
+            error.setCode(
+              {
+                "qx1" : qx.io.remote.RpcError.qx1.error.server.MethodNotFound,
+                "2.0" : qx.io.remote.RpcError.v2.error.MethodNotFound
+              }[protocol]);
+            error.setMessage("Method " + fqMethod + " not found.");
             error = qx.lang.Json.parse(error.stringify());
 
             // Build the error response
@@ -381,15 +387,16 @@ qx.Class.define("rpcjs.rpc.Server",
           // Is this request a notification?
           if (typeof(request.id) == "undefined")
           {
-            // Yup. Schedule this method to be called ASAP. We don't care
-            // about the result, so we needn't wait for it to complete.
+            // Yup. Schedule this method to be called later, but ASAP. We
+            // don't care about the result, so we needn't wait for it to
+            // complete.
             timer.start(
               function(userData, timerId)
               {
                 run(request);
               });            
             
-            // Set result to the timer object, so we ignore it, below.
+            // Set result to the timer object, so we'll ignore it, below.
             result = timer;
           }
           else
@@ -398,6 +405,13 @@ qx.Class.define("rpcjs.rpc.Server",
             result = run(request);
           }
 
+          // Was this a notification?
+          if (result === timer)
+          {
+            // Yup. Return undefined so it'll be ignored.
+            return undefined;
+          }
+          
           // Was the result an error?
           if (result instanceof rpcjs.rpc.error.Error)
           {
@@ -422,13 +436,6 @@ qx.Class.define("rpcjs.rpc.Server",
             return qx.lang.Json.stringify(ret);
           }
 
-          // Was this a notification?
-          if (result === timer)
-          {
-            // Yup. Return undefined so it'll be ignored.
-            return undefined;
-          }
-          
           // We have a standard result. Stringify and return a proper response.
           ret = 
             {
