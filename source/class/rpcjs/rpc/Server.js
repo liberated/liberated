@@ -433,13 +433,8 @@ qx.Class.define("rpcjs.rpc.Server",
             return ret;
           }
 
-          // Were we given a parameter array, or a parameter map, or null?
-          if (request.params === null)
-          {
-            // No provided parameters is equivalent to an empty parameter list
-            parameters = [];
-          }
-          else if (qx.lang.Type.isArray(request.params))
+          // Were we given a parameter array, or a parameter map, or none?
+          if (qx.lang.Type.isArray(request.params))
           {
             // Use the provided parameter list
             parameters = request.params;
@@ -462,6 +457,11 @@ qx.Class.define("rpcjs.rpc.Server",
                   parameters.push(request.params[paramName]);
                 });
             }
+          }
+          else
+          {
+            // No provided parameters is equivalent to an empty parameter list
+            parameters = [];
           }
 
           // Create a function that will run this one request. We do this to
