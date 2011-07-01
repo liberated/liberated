@@ -47,7 +47,7 @@ qx.Class.define("rpcjs.jetty.Rpc",
     processRequest : function(jsonData)
     {
       // Call the RPC server to process this request
-      return this.__rpcServer.processRequest(jsonData);
+      return this._rpcServer.processRequest(jsonData);
     }
   }
 });
