@@ -362,7 +362,7 @@ qx.Class.define("rpcjs.sim.Dbif",
 
       // Create a simple map of properties and values to be put in the
       // database
-      for (propertyName in entity.getDatabaseProperties())
+      for (propertyName in entity.getDatabaseProperties().fields)
       {
         // Add this property value to the data to be saved to the database.
         data[propertyName] = entityData[propertyName];
