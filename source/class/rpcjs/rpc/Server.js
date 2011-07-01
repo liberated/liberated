@@ -116,11 +116,12 @@ qx.Class.define("rpcjs.rpc.Server",
       // Determine which protocol to use. Is there a jsonrpc member?
       if (typeof(request.jsonrpc) == "string")
       {
+        // Get a new version 2.0 error object.
+        error = new rpcjs.rpc.error.Error("2.0");
+
         // Yup. It had better be "2.0"!
         if (request.jsonrpc != "2.0")
         {
-          // Get a new version 2.0 error object.
-          error = new rpcjs.rpc.error.Error("2.0");
           error.setCode(qx.io.remote.RpcError.v2.error.InvalidRequest);
           error.setMessage("'jsonrpc' member must be \"2.0\".");
           error.setData("Found value " + request.jsonrpc + "in 'jsonrpc'.");
@@ -128,13 +129,33 @@ qx.Class.define("rpcjs.rpc.Server",
           // Give 'em the error.
           return error.stringify();
         }
-        else
-        {
-          protocol = "2.0";
 
-          // Get a new version 2.0 error object.
-          error = new rpcjs.rpc.error.Error("2.0");
+        // Validate that the method is a string
+        if (! qx.lang.Type.isString(request.method))
+        {
+          error.setCode(qx.io.remote.RpcError.v2.error.InvalidRequest);
+          error.setMessage("JSON-RPC method name is missing or incorrect type");
+          error.setData("Method name must be a string.");
+
+          // Give 'em the error.
+          return error.stringify();
         }
+
+        // Validate that the params member is null, an object, or an array
+        if (request.params !== null &&
+            ! qx.lang.Type.isObject(request.params) &&
+            ! qx.lang.Type.isArray(request.params))
+        {
+          error.setCode(qx.io.remote.RpcError.v2.error.InvalidRequest);
+          error.setMessage("JSON-RPC params is missing or incorrect type");
+          error.setData("params must be null, an object, or an array.");
+
+          // Give 'em the error.
+          return error.stringify();
+        }
+
+        // We have what appears to be a valid version 2.0 request
+        protocol = "2.0";
       }
       else
       {
@@ -157,7 +178,10 @@ qx.Class.define("rpcjs.rpc.Server",
       }
 
       // Generate the fully-qualified method name
-      fqMethod = request.service + "." + request.method;
+      fqMethod =
+        (protocol == "qx1"
+         ? request.service + "." + request.method
+         : request.method);
 
       /*
        * Ensure the requested method name is kosher.  It should be:
