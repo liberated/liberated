@@ -375,7 +375,7 @@ qx.Class.define("rpcjs.appengine.Dbif",
       var             data;
       
       // Ensure that there's either a real key or no key; not empty string
-      if (key === "")
+      if (key == "")
       {
         throw new Error("Found disallowed empty key");
       }

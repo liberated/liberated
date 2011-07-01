@@ -55,24 +55,6 @@ qx.Class.define("rpcjs.rpc.Server",
   properties :
   {
     /**
-     * The version of the JSON-RPC protocol to use.  If null, the protocol is
-     * auto-identified from the request. Otherwise, the strings "qx1"
-     * (qooxdoo's modified Version 1) and "2.0" are currently allowed.
-     *
-     * @note
-     *   At this time, only qooxdoo's modified version 1 ("qx1") is supported.
-     */
-    protocol :
-    {
-      init     : "qx1",
-      nullable : true,
-      check    : function(protocolId)
-      {
-        return [ "qx1" ].indexOf(protocolId) != -1;
-      }
-    },
-
-    /**
      * A function which provides an interface to a service method. The
      * function will be called with a namespaced method name, and an
      * rpcjs.rpc.error.Error object. Under normal circumstances (success), it
@@ -130,66 +112,34 @@ qx.Class.define("rpcjs.rpc.Server",
         return reply;
       }
 
-      // Determine which protocol to use
-      protocol = this.getProtocol();
-      switch(protocol)
+      // Determine which protocol to use. Is there a jsonrpc member?
+      if (typeof(request.jsonrpc) == "string")
       {
-      case null:                // auto-determine protocol
-        // Is there a jsonrpc member?
-        if (typeof(request.jsonrpc == "string"))
+        // Yup. It had better be "2.0"!
+        if (request.jsonrpc != "2.0")
         {
-          // Yup. It had better be "2.0"!
-          if (request.jsonrpc != "2.0")
-          {
-            // Get a new version 2.0 error object.
-            error = new rpcjs.rpc.error.Error("2.0");
-            error.setCode(qx.io.remote.RpcError.v2.error.InvalidRequest);
-            error.setMessage("'jsonrpc' member must be \"2.0\".");
-            error.setData("Found value " + request.jsonrpc + "in 'jsonrpc'.");
-                          
-            // Give 'em the error.
-            return error.stringify();
-          }
-          else
-          {
-            protocol = "2.0";
+          // Get a new version 2.0 error object.
+          error = new rpcjs.rpc.error.Error("2.0");
+          error.setCode(qx.io.remote.RpcError.v2.error.InvalidRequest);
+          error.setMessage("'jsonrpc' member must be \"2.0\".");
+          error.setData("Found value " + request.jsonrpc + "in 'jsonrpc'.");
 
-            // Get a new version 2.0 error object.
-            error = new rpcjs.rpc.error.Error("2.0");
-            error.setCode(qx.io.remote.RpcError.v2.error.InvalidRequest);
-            error.setMessage("JSON-RPC Version 2.0 not yet supported.");
-                          
-            // Give 'em the error.
-            return error.stringify();
-          }
+          // Give 'em the error.
+          return error.stringify();
         }
         else
         {
-          protocol = "qx1";
-          
-          // Get a qooxdoo-modified version 1 error object
-          error = new rpcjs.rpc.error.Error("qx1");
+          protocol = "2.0";
+
+          // Get a new version 2.0 error object.
+          error = new rpcjs.rpc.error.Error("2.0");
         }
-        break;
-
-      case "qx1":
-        // Get a qooxdoo-modified version 1 error object
-        error = new rpcjs.rpc.error.Error("qx1");
-        break;
-        
-/*
-      case "2.0":
-        // Get a protocol version 2.0 error object
-        error = new rpcjs.rpc.error.Error("2.0");
-        break;
-*/
       }
-
-      // Ensure that the input has the requisite members, depending on the
-      // protocol in use.
-      switch(protocol)
+      else
       {
-      case "qx1":
+        protocol = "qx1";
+
+        // Ensure all of the required members are present in the request
         if (! qx.lang.Type.isString(request.service) ||
             ! qx.lang.Type.isString(request.method) ||
             ! qx.lang.Type.isArray(request.params))
@@ -200,45 +150,50 @@ qx.Class.define("rpcjs.rpc.Server",
             "service, method, or params missing.";
           return reply;
         }
-        
-        // Generate the fully-qualified method name
-        fqMethod = request.service + "." + request.method;
 
-        /*
-         * Ensure the requested method name is kosher.  It should be:
-         *
-         *   First test for:
-         *   - a dot-separated sequences of strings
-         *   - first character of each string is in [a-zA-Z] 
-         *   - other characters are in [_a-zA-Z0-9]
-         *
-         *   Then verify:
-         *   - no two adjacent dots
-         */
-        
-        // First test for valid characters
-        if (! /^[a-zA-Z][_.a-zA-Z0-9]*$/.test(fqMethod))
-        {
-          // There's some illegal character in the service or method name
-          error.setCode(qx.io.remote.RpcError.qx1.error.MethodNotFound);
-          error.setMessage("Illegal character found in service name.");
-          return error.stringify();
-        }
-        
-        // Next, ensure there are no double dots
-        if (request.service.indexOf("..") != -1)
-        {
-          error.setCode(qx.io.remote.RpcError.qx1.error.MethodNotFound);
-          error.setMessage("Illegal use of two consecutive dots " +
-                           "in service name.");
-          return error.stringify();
-        }
-        break;
-        
-/*
-      case "2.0":
-        break;
-*/
+        // Get a qooxdoo-modified version 1 error object
+        error = new rpcjs.rpc.error.Error("qx1");
+      }
+
+      // Generate the fully-qualified method name
+      fqMethod = request.service + "." + request.method;
+
+      /*
+       * Ensure the requested method name is kosher.  It should be:
+       *
+       *   First test for:
+       *   - a dot-separated sequences of strings
+       *   - first character of each string is in [a-zA-Z] 
+       *   - other characters are in [_a-zA-Z0-9]
+       *
+       *   Then verify:
+       *   - no two adjacent dots
+       */
+
+      // First test for valid characters
+      if (! /^[a-zA-Z][_.a-zA-Z0-9]*$/.test(fqMethod))
+      {
+        // There's some illegal character in the service or method name
+        error.setCode(
+          {
+            "qx1" : qx.io.remote.RpcError.qx1.error.server.MethodNotFound,
+            "2.0" : qx.io.remote.RpcError.v2.error.MethodNotFound
+          }[protocol]);
+        error.setMessage("Illegal character found in service name.");
+        return error.stringify();
+      }
+
+      // Next, ensure there are no double dots
+      if (request.service.indexOf("..") != -1)
+      {
+        error.setCode(
+          {
+            "qx1" : qx.io.remote.RpcError.qx1.error.server.MethodNotFound,
+            "2.0" : qx.io.remote.RpcError.v2.error.MethodNotFound
+          }[protocol]);
+        error.setMessage("Illegal use of two consecutive dots " +
+                         "in service name.");
+        return error.stringify();
       }
       
       // Use the registered callback to get a service function associated with
@@ -277,14 +232,11 @@ qx.Class.define("rpcjs.rpc.Server",
       catch(e)
       {
         // The service method threw an error. Create our own error from it.
-        if (this.getProtocol() == "qx1")
-        {
-          error.setCode(qx.io.remote.RpcError.qx1.error.server.ScriptError);
-        }
-        else
-        {
-          error.setCode(qx.io.remote.RpcError.v2.error.InternalError);
-        }
+        error.setCode(
+          {
+            "qx1" : qx.io.remote.RpcError.qx1.error.server.ScriptError,
+            "2.0" : qx.io.remote.RpcError.v2.error.InternalError
+          }[protocol]);
 
         // Combine the message from the original error
         error.setMessage("Method threw an error: " + e);

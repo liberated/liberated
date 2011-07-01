@@ -333,7 +333,8 @@ qx.Class.define("rpcjs.dbif.Entity",
      */
     getDatabaseProperties : function()
     {
-      return rpcjs.dbif.Entity.propertyTypes[this.getEntityType()];
+      var props = rpcjs.dbif.Entity.propertyTypes[this.getEntityType()];
+      return props;
     },
     
     // property apply function
