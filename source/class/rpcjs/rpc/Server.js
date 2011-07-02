@@ -548,7 +548,7 @@ qx.Class.define("rpcjs.rpc.Server",
             ret = 
               {
                 id    : request.id,
-                error : qx.lang.Json.parse(error.stringify())
+                error : qx.lang.Json.parse(result.stringify())
               };
             
             // If this is v2, we need to add the indicator of such.
