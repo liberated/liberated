@@ -272,7 +272,7 @@ qx.Class.define("rpcjs.sim.remote.Transport",
           text = this.__responseData;
           if (text && text.length > 0)
           {
-            ret = qx.util.Json.parse(text, false);
+            ret = qx.lang.Json.parse(text);
             ret = (ret === 0 ? 0 : (ret || null));
             return ret;
           }
