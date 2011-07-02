@@ -94,6 +94,9 @@ qx.Class.define("rpcjs.demo.Application",
           rpc.setUrl("/rpc");
           rpc.setServiceName("qooxdoo.test");
           rpc.setTimeout(30000);
+          
+          // Switch to the standards-compliant version 2.0 of JSON-RPC
+          rpc.setProtocol("2.0");
 
           if (this.bSimple)
           {
