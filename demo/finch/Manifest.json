@@ -1,0 +1,34 @@
+{
+  "info" : 
+  {
+    "name" : "RpcJs Demo for interacting with the Finch robot",
+
+    "summary" : "RpcJs Demo for interacting with the Finch robot",
+    "description" : "This is a skeleton for a qooxdoo contribution demo.",
+    
+    "homepage" : "http://demo.qooxdoo.org/contrib/RpcJs",
+
+    "license" : "LGPL/EPL",
+    "authors" : 
+    [
+      {
+        "name" : "Derrell Lipman (derrell)",
+        "email" : "derrell.lipman@unwireduniverse.com"
+      }
+    ],
+
+    "version" : "trunk",
+    "qooxdoo-versions": ["1.4", "trunk"]
+  },
+  
+  "provides" : 
+  {
+    "namespace"   : "rpcjs.finch",
+    "encoding"    : "utf-8",
+    "class"       : "source/class",
+    "resource"    : "source/resource",
+    "translation" : "source/translation",
+    "type"        : "application"
+  }
+}
+

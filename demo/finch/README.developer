@@ -1,0 +1,2 @@
+Create build/script/qxlib-noopt.js with "generate.py qxlib-noopt" in this
+directory. (QOOXDOO_PATH in config.json may need adjusting.)
