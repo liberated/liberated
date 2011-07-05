@@ -470,6 +470,7 @@ qx.Class.define("rpcjs.rpc.Server",
             {
               var             result;
               var             params = qx.lang.Array.clone(parameters);
+              var             timer = {}; // just a reference to compare to
 
               // Assume that any error that occurs here on out will be of
               // Application origin. Only JavaScript errors in the script will
@@ -520,7 +521,7 @@ qx.Class.define("rpcjs.rpc.Server",
             // Yup. Schedule this method to be called later, but ASAP. We
             // don't care about the result, so we needn't wait for it to
             // complete.
-            timer = setTimeout(
+            setTimeout(
               function()
               {
                 run(request);
