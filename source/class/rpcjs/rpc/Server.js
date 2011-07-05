@@ -261,7 +261,8 @@ qx.Class.define("rpcjs.rpc.Server",
             {
               error.setCode(qx.io.remote.RpcError.v2.error.InvalidRequest);
               error.setMessage("JSON-RPC params is missing or incorrect type");
-              error.setData("params must be null, an object, or an array.");
+              error.setData(
+                "params must be undefined, an object, or an array.");
 
               // Build the error response
               ret = 
@@ -281,8 +282,8 @@ qx.Class.define("rpcjs.rpc.Server",
           {
             // We're in batch mode so we had to have been in 2.0 mode
             error.setCode(qx.io.remote.RpcError.v2.error.InvalidRequest);
-            error.setMessage("JSON-RPC params is missing or incorrect type");
-            error.setData("params must be null, an object, or an array.");
+            error.setMessage("JSON-RPC protocol version is missing.");
+            error.setData("Expected 'jsonrpc:\"2.0\"'");
 
             // Build the error response
             ret = 
@@ -298,13 +299,16 @@ qx.Class.define("rpcjs.rpc.Server",
           {
             protocol = "qx1";
 
+            // Get a qooxdoo-modified version 1 error object
+            error = new rpcjs.rpc.error.Error("qx1");
+
             // Ensure all of the required members are present in the request
             if (! qx.lang.Type.isString(request.service) ||
                 ! qx.lang.Type.isString(request.method) ||
                 ! qx.lang.Type.isArray(request.params))
             {
               // Invalid. We still send back a 2.0 error object, however.
-              error.setCode(qx.io.remote.RpcError.v2.error.InvalidRequest);
+              error.setCode(qx.io.remote.RpcError.qx1.error.server.Unknown);
               error.setMessage("Missing service, method, or params");
 
               // Build the error response
@@ -316,9 +320,6 @@ qx.Class.define("rpcjs.rpc.Server",
 
               return ret;
             }
-
-            // Get a qooxdoo-modified version 1 error object
-            error = new rpcjs.rpc.error.Error("qx1");
           }
 
           // Generate the fully-qualified method name
@@ -472,9 +473,16 @@ qx.Class.define("rpcjs.rpc.Server",
             {
               var             result;
               var             params = qx.lang.Array.clone(parameters);
-              var             error;
 
-              // provide the error object as the last parameter.
+              // Assume that any error that occurs here on out will be of
+              // Application origin. Only JavaScript errors in the script will
+              // return to being Server origin.
+              if (protocol == "qx1")
+              {
+                error.setOrigin(qx.io.remote.RpcError.qx1.origin.Application);
+              }
+
+              // Provide the error object as the last parameter.
               params.push(error); 
 
               // We should now have a service function to call. Call it.
