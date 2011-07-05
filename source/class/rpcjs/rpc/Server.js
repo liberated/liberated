@@ -84,7 +84,7 @@ qx.Class.define("rpcjs.rpc.Server",
      */
     processRequest : function(jsonInput)
     {
-      var             timer;      // timer manager object
+      var             timer;      // timeout object
       var             ret;        // error return object
       var             bBatch;     // whether a batch request is received
       var             requests;   // the parsed input request
@@ -98,9 +98,6 @@ qx.Class.define("rpcjs.rpc.Server",
       var             run;        // function to run the service call
       var             responses;  // array of responses (in case of batch)
       
-      // Get a timer instance
-      timer = qx.util.TimerManager.getInstance();
-
       // Assume protocol is 2.0 until we (might) discover otherwise
       protocol = "2.0";
 
@@ -523,11 +520,12 @@ qx.Class.define("rpcjs.rpc.Server",
             // Yup. Schedule this method to be called later, but ASAP. We
             // don't care about the result, so we needn't wait for it to
             // complete.
-            timer.start(
-              function(userData, timerId)
+            timer = setTimeout(
+              function()
               {
                 run(request);
-              });            
+              }, 
+              0);
             
             // Set result to the timer object, so we'll ignore it, below.
             result = timer;
