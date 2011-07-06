@@ -405,17 +405,7 @@ qx.Class.define("rpcjs.rpc.Server",
               return undefined;
             }
 
-            // Give 'em the error.
-            // The error class knows how to stringify itself, but we need a map.
-            // Go both directions, to obtain the map.
-            error.setCode(
-              {
-                "qx1" : qx.io.remote.RpcError.qx1.error.server.MethodNotFound,
-                "2.0" : qx.io.remote.RpcError.v2.error.MethodNotFound
-              }[protocol]);
-            error.setMessage("Method " + fqMethod + " not found.");
-
-            // Build the error response
+            // Build error response. The error was set in the service factory.
             ret = 
               {
                 id    : request.id,
