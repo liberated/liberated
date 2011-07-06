@@ -72,54 +72,41 @@ qx.Class.define("rpcjs.AbstractRpcHandler",
 
       // Append the fully-qualified method name to the services map and
       // evaluate it in hopes of getting a method reference.
-      try
-      {
-        // We have a dot-separated fully-qualified method name. We want to
-        // access that entry in the map of maps in this.__services. Using the
-        // index notation won't work, since it's multiple levels deep
-        // (i.e. fqMethodName might be something like "a.b.c").
-        // 
-        // fqMethodName was sanitized by rpcjs.rpc.Server:processRequest()
-        // so this eval is reasonably safe. (I know... Famous last words!)
-        method = eval("rpcjs.AbstractRpcHandler._services" +
-                      "." + fqMethodName);
-        
-        // We might have just gotten null, which also means no such method
-        if (! method)
-        {
-          throw new Error("No such method");
-        }
+      //
+      // We have a dot-separated fully-qualified method name. We want to
+      // access that entry in the map of maps in this.__services. Using the
+      // index notation won't work, since it's multiple levels deep
+      // (i.e. fqMethodName might be something like "a.b.c").
+      // 
+      // fqMethodName was sanitized by rpcjs.rpc.Server:processRequest()
+      // so this eval is reasonably safe. (I know... Famous last words!)
+      method = eval("rpcjs.AbstractRpcHandler._services" +
+                    "." + fqMethodName);
 
-        // Validate allowability of calling this function
-        if (rpcjs.AbstractRpcHandler.authenticationFunction &&
-            !rpcjs.AbstractRpcHandler.authenticationFunction(fqMethodName))
-        {
-          // No such method.
-          if (protocol == "qx1")
-          {
-            error.setCode(
-              qx.io.remote.RpcError.qx1.error.server.PermissionDenied);
-          }
-          else
-          {
-            error.setCode(qx.io.remote.RpcError.v2.error.PermissionDenied);
-          }
-          error.setMessage("Permission denied.");
-          return null;
-        }
-      }
-      catch(e)
+      // We might have just gotten null, which also means no such method
+      if (! method)
       {
         // No such method.
-        if (protocol == "qx1")
-        {
-          error.setCode(qx.io.remote.RpcError.qx1.error.server.MethodNotFound);
-        }
-        else
-        {
-          error.setCode(qx.io.remote.RpcError.v2.error.MethodNotFound);
-        }
+        error.setCode(
+          {
+            "qx1" : qx.io.remote.RpcError.qx1.error.server.MethodNotFound,
+            "2.0" : qx.io.remote.RpcError.v2.error.MethodNotFound
+          }[protocol]);
         error.setMessage(e.message);
+        return null;
+      }
+
+      // Validate allowability of calling this function
+      if (rpcjs.AbstractRpcHandler.authenticationFunction &&
+          !rpcjs.AbstractRpcHandler.authenticationFunction(fqMethodName))
+      {
+        // Permission denied
+        error.setCode(
+          {
+            "qx1" : qx.io.remote.RpcError.qx1.error.server.PermissionDenied,
+            "2.0" : qx.io.remote.RpcError.v2.error.PermissionDenied
+          }[protocol]);
+        error.setMessage("Permission denied.");
         return null;
       }
       
