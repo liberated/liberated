@@ -35,7 +35,7 @@ qx.Class.define("rpcjs.sim.Dbif",
   
   statics :
   {
-    /** The default database, filled in in the defer() function */
+    /** The default database. See {@link setDb}. */
     Database : null,
     
     /** 
@@ -57,6 +57,19 @@ qx.Class.define("rpcjs.sim.Dbif",
     },
 
     
+    /**
+     * Save the user-specified database.
+     *
+     * @param db {Map}
+     *   The database map. Each top-level key in this map is an object type,
+     *   which contains a map of key/value pairs.
+     */
+    setDb : function(db)
+    {
+      rpcjs.sim.Dbif.Database = db;
+    },
+
+
     /**
      * Query for all entities of a given class/type, given certain criteria.
      *
@@ -370,6 +383,13 @@ qx.Class.define("rpcjs.sim.Dbif",
 
       // Save it to the database
       rpcjs.sim.Dbif.Database[type][key] = data;
+      
+      // Write it to Web Storage
+      if (typeof window.localStorage !== "undefined")
+      {
+        qx.Bootstrap.debug("Writing DB to Web Storage");
+        localStorage.simDB = qx.lang.Json.stringify(rpcjs.sim.Dbif.Database);
+      }
     },
     
 
@@ -386,6 +406,13 @@ qx.Class.define("rpcjs.sim.Dbif",
       var             type = entity.getEntityType();
       
       delete rpcjs.sim.Dbif.Database[type][key];
+      
+      // Write it to Web Storage
+      if (typeof window.localStorage !== "undefined")
+      {
+        qx.Bootstrap.debug("Writing DB to Web Storage");
+        localStorage.simDB = qx.lang.Json.stringify(rpcjs.sim.Dbif.Database);
+      }
     }
   },
 
