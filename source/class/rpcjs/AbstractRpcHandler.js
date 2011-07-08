@@ -92,7 +92,7 @@ qx.Class.define("rpcjs.AbstractRpcHandler",
             "qx1" : qx.io.remote.RpcError.qx1.error.server.MethodNotFound,
             "2.0" : qx.io.remote.RpcError.v2.error.MethodNotFound
           }[protocol]);
-        error.setMessage(e.message);
+        error.setMessage("No such method");
         return null;
       }
 
