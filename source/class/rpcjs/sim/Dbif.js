@@ -143,7 +143,10 @@ qx.Class.define("rpcjs.sim.Dbif",
       case "String":
         if (typeof dbObjectMap[searchCriteria] !== "undefined")
         {
-          results.push(dbObjectMap[searchCriteria]);
+          // Make a deep copy of the results
+          result =
+            qx.util.Serializer.toNativeObject(dbObjectMap[searchCriteria]);
+          results.push(result);
         }
         return results;
       }
