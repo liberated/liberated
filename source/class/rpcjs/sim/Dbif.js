@@ -343,7 +343,11 @@ qx.Class.define("rpcjs.sim.Dbif",
       var             key = entityData[keyProperty];
       var             type = entity.getEntityType();
       var             propertyName;
+      var             fields;
       
+      // Get the field names for this entity type
+      fields = entity.getDatabaseProperties().fields;
+
       // If there's no key yet...
       switch(qx.lang.Type.getClass(key))
       {
