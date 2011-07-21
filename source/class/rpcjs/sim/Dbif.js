@@ -191,7 +191,6 @@ qx.Class.define("rpcjs.sim.Dbif",
                 propertyTypes = rpcjs.dbif.Entity.propertyTypes;
                 switch(propertyTypes[type].fields[criterium.field])
                 {
-                case "Key":
                 case "String":
                 case "LongString":
                 case "Date":
@@ -200,6 +199,7 @@ qx.Class.define("rpcjs.sim.Dbif",
                     "\"" + criterium.value + "\" ";
                   break;
 
+                case "Key":
                 case "Integer":
                 case "Float":
                   ret +=
@@ -339,7 +339,8 @@ qx.Class.define("rpcjs.sim.Dbif",
     {
       var             data = {};
       var             entityData = entity.getData();
-      var             key = entityData[entity.getEntityKeyProperty()];
+      var             keyProperty = entity.getEntityKeyProperty();
+      var             key = entityData[keyProperty];
       var             type = entity.getEntityType();
       var             propertyName;
       
@@ -348,8 +349,21 @@ qx.Class.define("rpcjs.sim.Dbif",
       {
       case "Undefined":
       case "Null":
-        // Generate a new key
-        key = String(rpcjs.sim.Dbif.__nextKey++);
+        // Generate a new key. Determine what type of key to use.
+        switch(fields[keyProperty])
+        {
+        case "Key":
+        case "Number":
+          key = rpcjs.sim.Dbif.__nextKey++;
+          break;
+          
+        case "String":
+          key = String(rpcjs.sim.Dbif.__nextKey++);
+          break;
+          
+        default:
+          throw new Error("No way to autogenerate key");
+        }
         
         // Save this key in the key field
         entityData[entity.getEntityKeyProperty()] = key;
