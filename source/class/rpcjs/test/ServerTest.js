@@ -424,7 +424,18 @@ qx.Class.define("rpcjs.test.ServerTest",
      */
     _serviceFactory : function(methodName, protocol, error)
     {
-      return this.__services[methodName];
+      var f = this.__services[methodName];
+
+      if (! f)
+      {
+        error.setCode(
+          {
+            "qx1" : qx.io.remote.RpcError.qx1.error.server.MethodNotFound,
+            "2.0" : qx.io.remote.RpcError.v2.error.MethodNotFound
+          }[protocol]);
+      }
+      
+      return f;
     },
 
     /**

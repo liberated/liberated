@@ -465,6 +465,45 @@ qx.Class.define("rpcjs.sim.Dbif",
       this.__services[this.__rpcKey].features[serviceName] = f;
     },
 
+    
+    /**
+     * Retrieve the parameter names for a registered service.
+     *
+     * @param serviceName {String}
+     *   The name of this service within the <rpcKey>.features namespace.
+     *
+     * @return {Array|null|undefined}
+     *   If the specified service exists and parameter names have been
+     *   provided for it, then an array of parameter names is returned.
+     *
+     *   If the service exists but no parameter names were provided in the
+     *   registration of the service, null is returned.
+     *
+     *   If the service does not exist, undefined is returned.
+     */
+    getServiceParamNames : function(serviceName)
+    {
+      // Get the stored service function
+      var f = this.__services[this.__rpcKey].features[serviceName];
+      
+      // Did we find it?
+      if (! f)
+      {
+        // No, it is not a registered function.
+        return undefined;
+      }
+      
+      // Were parameter names registered with the function?
+      if (f.parameterNames)
+      {
+        // Yup. Return a copy of the parameter name array
+        return qx.lang.Array.clone(f.parameterNames);
+      }
+      
+      // The function was registered, but not its parameter names.
+      return null;
+    },
+
     /** The top-level RPC key, used to index into this.__services */
     __rpcKey : null,
 
