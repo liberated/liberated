@@ -384,10 +384,17 @@ qx.Class.define("rpcjs.appengine.Dbif",
       fields = entity.getDatabaseProperties().fields;
 
       // If there's no key yet...
-      switch(qx.lang.Type.getClass(key))
+      
+      // Note: Rhino (and thus App Engine which uses Rhino-compiled code)
+      // causes "global" to returned by qx.lang.Type.getClass(key) if key is
+      // null or undefined. Without knowing whether it returns "global" in any
+      // other case, we test for those two cases explicitly.
+      switch(key === null || key === undefined
+             ? "Null"
+             : qx.lang.Type.getClass(key))
       {
-      case "Undefined":
       case "Null":
+      case "Undefined":         // Never occurs due to explicit test above
         // Generate a new key. Determine what type of key to use.
         switch(fields[keyProperty])
         {
@@ -420,6 +427,9 @@ qx.Class.define("rpcjs.appengine.Dbif",
         
       case "String":
         // nothing special to do
+        break;
+        
+      default:
         break;
       }
 
