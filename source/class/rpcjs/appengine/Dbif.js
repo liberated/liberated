@@ -366,14 +366,32 @@ qx.Class.define("rpcjs.appengine.Dbif",
       var             Datastore;
       var             entityData = entity.getData();
       var             keyProperty = entity.getEntityKeyProperty();
-      var             key = entityData[keyProperty];
       var             type = entity.getEntityType();
       var             propertyName;
       var             propertyType;
       var             fields;
       var             fieldName;
       var             data;
+      var             key;
+      var             keyFields = [];
       
+      // Are we working with a composite key?
+      if (qx.lang.Type.getClass(keyProperty) == "Array")
+      {
+        // Yup. Build the composite key from these fields
+        keyProperty.forEach(
+          function(fieldName)
+          {
+            keyFields.push(entityData[fieldName]);
+          });
+        key = rpcjs.appengine.Dbif._buildCompositeKey(keyFields);
+      }
+      else
+      {
+        // Retrieve the (single field) key
+        key = entityData[keyProperty];
+      }
+
       // Ensure that there's either a real key or no key; not empty string
       if (key == "")
       {
@@ -422,7 +440,7 @@ qx.Class.define("rpcjs.appengine.Dbif",
         
       case "Array":
         // Build a composite key string from these key values
-        key = this.constructor._buildCompositeKey(key);
+        key = rpcjs.appengine.Dbif._buildCompositeKey(key);
         break;
         
       case "String":

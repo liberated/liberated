@@ -340,11 +340,29 @@ qx.Class.define("rpcjs.sim.Dbif",
       var             data = {};
       var             entityData = entity.getData();
       var             keyProperty = entity.getEntityKeyProperty();
-      var             key = entityData[keyProperty];
       var             type = entity.getEntityType();
       var             propertyName;
       var             fields;
+      var             key;
+      var             keyFields = [];
       
+      // Are we working with a composite key?
+      if (qx.lang.Type.getClass(keyProperty) == "Array")
+      {
+        // Yup. Build the composite key from these fields
+        keyProperty.forEach(
+          function(fieldName)
+          {
+            keyFields.push(entityData[fieldName]);
+          });
+        key = rpcjs.sim.Dbif._buildCompositeKey(keyFields);
+      }
+      else
+      {
+        // Retrieve the (single field) key
+        key = entityData[keyProperty];
+      }
+
       // Get the field names for this entity type
       fields = entity.getDatabaseProperties().fields;
 
@@ -377,7 +395,7 @@ qx.Class.define("rpcjs.sim.Dbif",
         // If there's no key, then generate a new key
         if (isNaN(key))
         {
-          key = String(this.constructor.__nextKey++);
+          key = String(rpcjs.sim.Dbif.__nextKey++);
         }
         
         // Save this key in the key field
@@ -386,7 +404,7 @@ qx.Class.define("rpcjs.sim.Dbif",
         
       case "Array":
         // Build a composite key string from these key values
-        key = this.constructor._buildCompositeKey(key);
+        key = rpcjs.sim.Dbif._buildCompositeKey(key);
         break;
         
       case "String":
