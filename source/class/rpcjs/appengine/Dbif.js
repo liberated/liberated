@@ -539,12 +539,33 @@ qx.Class.define("rpcjs.appengine.Dbif",
     remove : function(entity)
     {
       var             entityData = entity.getData();
-      var             key = entityData[entity.getEntityKeyProperty()];
+      var             keyProperty = entity.getEntityKeyProperty();
       var             type = entity.getEntityType();
+      var             propertyName;
+      var             fields;
+      var             key;
+      var             keyFields = [];
       var             dbKey;
       var             datastore;
       var             Datastore;
       
+      // Are we working with a composite key?
+      if (qx.lang.Type.getClass(keyProperty) == "Array")
+      {
+        // Yup. Build the composite key from these fields
+        keyProperty.forEach(
+          function(fieldName)
+          {
+            keyFields.push(entityData[fieldName]);
+          });
+        key = rpcjs.sim.Dbif._buildCompositeKey(keyFields);
+      }
+      else
+      {
+        // Retrieve the (single field) key
+        key = entityData[keyProperty];
+      }
+
       // Create the database key value
       Datastore = Packages.com.google.appengine.api.datastore;
       dbKey = Datastore.KeyFactory.createKey(type, key);
