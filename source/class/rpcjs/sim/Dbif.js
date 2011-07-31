@@ -194,31 +194,73 @@ qx.Class.define("rpcjs.sim.Dbif",
                 case "String":
                 case "LongString":
                 case "Date":
-                  ret += 
-                    "entry[\"" + criterium.field + "\"] === " +
-                    "\"" + criterium.value + "\" ";
+                  if (typeof criterium.value != "string")
+                  {
+                    qx.Bootstrap.warn(
+                      "Expected criterium value to be string, " +
+                      "got " + typeof(criterium.value));
+                    ret += "false";
+                  }
+                  else
+                  {
+                    ret += 
+                      "entry[\"" + criterium.field + "\"] === " +
+                      "\"" + criterium.value + "\" ";
+                  }
                   break;
 
                 case "Key":
                 case "Integer":
                 case "Float":
-                  ret +=
-                    "entry[\"" + criterium.field + "\"] === " + criterium.value;
+                  if (typeof criterium.value != "number")
+                  {
+                    qx.Bootstrap.warn(
+                      "Expected criterium value to be number, " +
+                      "got " + typeof(criterium.value));
+                    ret += "false";
+                  }
+                  else
+                  {
+                    ret +=
+                      "entry[\"" + criterium.field + "\"] === " + 
+                      criterium.value;
+                  }
                   break;
 
                 case "KeyArray":
                 case "StringArray":
                 case "LongStringArray":
-                  ret +=
-                  "qx.lang.Array.contains(entry[\"" + 
-                    criterium.field + "\"], " + "\"" + criterium.value + "\")";
+                  if (typeof criterium.value != "string")
+                  {
+                    qx.Bootstrap.warn(
+                      "Expected criterium value to be string, " +
+                      "got " + typeof(criterium.value));
+                    ret += "false";
+                  }
+                  else
+                  {
+                    ret +=
+                      "qx.lang.Array.contains(entry[\"" + 
+                      criterium.field + "\"], " + 
+                      "\"" + criterium.value + "\")";
+                  }
                   break;
 
                 case "IntegerArray":
                 case "FloatArray":
-                  ret +=
-                  "qx.lang.Array.contains(entry[\"" + 
-                    criterium.field + "\"], " + criterium.value + ")";
+                  if (typeof criterium.value != "number")
+                  {
+                    qx.Bootstrap.warn(
+                      "Expected criterium value to be string, " +
+                      "got " + typeof(criterium.value));
+                    ret += "false";
+                  }
+                  else
+                  {
+                    ret +=
+                      "qx.lang.Array.contains(entry[\"" + 
+                      criterium.field + "\"], " + criterium.value + ")";
+                  }
                   break;
 
                 default:
