@@ -160,6 +160,32 @@ qx.Class.define("rpcjs.sim.Dbif",
               var             i;
               var             ret = "";
               var             propertyTypes;
+              var             filterOp;
+              
+              // Convert or determine the filter operation
+              filterOp = 
+                (function(filterOp)
+                 {
+                   switch(filterOp)
+                   {
+                   case "<=":
+                   case "<":
+                   case ">":
+                   case ">=":
+                     return filterOp; // Use filter operation as provided
+                     
+                   case "!=":
+                     return "!==";    // "Not identical"
+
+                   case "=":
+                   case undefined:
+                     return "===";    // "Identical"
+                     
+                   default:
+                     throw new Error("Unexpected filter operation: " + 
+                                     filterOp);
+                   }
+                 })(criterium.filterOp);
 
               switch(criterium.type)
               {
@@ -204,7 +230,7 @@ qx.Class.define("rpcjs.sim.Dbif",
                   else
                   {
                     ret += 
-                      "entry[\"" + criterium.field + "\"] === " +
+                      "entry[\"" + criterium.field + "\"] " + filterOp +
                       "\"" + criterium.value + "\" ";
                   }
                   break;
@@ -222,7 +248,7 @@ qx.Class.define("rpcjs.sim.Dbif",
                   else
                   {
                     ret +=
-                      "entry[\"" + criterium.field + "\"] === " + 
+                      "entry[\"" + criterium.field + "\"] " + filterOp +
                       criterium.value;
                   }
                   break;
@@ -236,6 +262,11 @@ qx.Class.define("rpcjs.sim.Dbif",
                       "Expected criterium value to be string, " +
                       "got " + typeof(criterium.value));
                     ret += "false";
+                  }
+                  else if (criterium.filterOp)
+                  {
+                    qx.Bootstrap.warn(
+                      "Filter operations can not be applied to array types");
                   }
                   else
                   {
@@ -254,6 +285,11 @@ qx.Class.define("rpcjs.sim.Dbif",
                       "Expected criterium value to be string, " +
                       "got " + typeof(criterium.value));
                     ret += "false";
+                  }
+                  else if (criterium.filterOp)
+                  {
+                    qx.Bootstrap.warn(
+                      "Filter operations can not be applied to array types");
                   }
                   else
                   {
