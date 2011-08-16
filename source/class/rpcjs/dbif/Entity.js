@@ -49,7 +49,7 @@ qx.Class.define("rpcjs.dbif.Entity",
     }
 
     // If an entity key was specified...
-    if (typeof entityKey != "undefined")
+    if (typeof entityKey != "undefined" && entityKey !== null)
     {
       // ... then query for the object.
       queryResults = 
