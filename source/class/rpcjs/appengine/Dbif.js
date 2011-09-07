@@ -43,7 +43,7 @@ qx.Class.define("rpcjs.appengine.Dbif",
     /** 
      * The next value to use for an auto-generated key for an entity
      */
-    __nextKey : 0,
+    __nextKey : 1,
 
     /*
      * Build a composite key.
