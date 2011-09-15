@@ -7,11 +7,27 @@
  *   EPL : http://www.eclipse.org/org/documents/epl-v10.php
  */
 
+/**
+ * The abstract base class from which all concrete entities descend.
+ */
 qx.Class.define("rpcjs.dbif.Entity",
 {
   extend : qx.core.Object,
   type   : "abstract",
   
+  /**
+   * Constructor for an Entity.
+   *
+   * @param entityType {String}
+   *   The name of this type of entity. It is used during normal operation to
+   *   retrieve the property types available for this entity.
+   *
+   * @param entityKey {String|Integer|Array}
+   *   If the entity key is a single field, this must be a string or integer
+   *   specifying that key value. If the entity key is composite, i.e., it is
+   *   made up of a series of fields, then this must be an array containing
+   *   the string or integer values of each of the fields in the key.
+   */
   construct : function(entityType, entityKey)
   {
     var             i;
@@ -129,7 +145,10 @@ qx.Class.define("rpcjs.dbif.Entity",
 
     /**
      * The property name that is to be used as the database entity key (aka
-     * primary key).
+     * primary key). If the key is composite, i.e., composed of more than one
+     * property, than this contains an array of strings, where each string is
+     * the name of a property, and the key is composed of the fields from each
+     * of these properties, in the order listed herein.
      */
     entityKeyProperty :
     {
@@ -145,10 +164,11 @@ qx.Class.define("rpcjs.dbif.Entity",
       nullable : false
     },
 
-    /*
+    /**
      * The unique id to be used as the database entity key (aka primary key),
      * if no other property has been designated in entityKeyProperty as the
-     * primary key.
+     * primary key. The actual value is determined by the specific database
+     * interface in use, so this may be either an integer or a string.
      */
     uid :
     {
@@ -166,7 +186,22 @@ qx.Class.define("rpcjs.dbif.Entity",
     propertyTypes : {},
 
 
-    /** Register an entity type */
+    /**
+     * Register an entity type. This is called by each subclass, immediately
+     * upon loading the subclass (typically in its defer: function), in order
+     * to register that subclass' entity type name to correspond with that
+     * subclass' class name.
+     *
+     * Each subclass of rpcjs.dbif.Entity represents a particular object type,
+     * and is identified by its class name and by its (shorter) entityType.
+     *
+     * @param classname {String}
+     *   The class name of the concrete subclass of rpcjs.dbif.Entity being
+     *   registered.
+     *
+     * @param entityType {String}
+     *   The short entity type name of the subclass being registered.
+     */
     registerEntityType : function(classname, entityType)
     {
       // Save this value in the map from classname to entity type
@@ -174,7 +209,31 @@ qx.Class.define("rpcjs.dbif.Entity",
     },
 
 
-    /** Register the property types for an entity class */
+    /**
+     * Register the property types for an entity class. This is called by each
+     * subclass, immediately upon loading the subclass (typically in its
+     * defer: function), in order to register the names of the properties
+     * (fields) that are stored for each object of this type.
+     *
+     * @param entityType {String}
+     *   The entity type name (as was passed to registerEntityType()), which
+     *   uniquely identifies this subclass of rpcjs.dbif.Entity.
+     *
+     * @param propertyTypes {Map}
+     *   A map containing, as its member names, the name of each of the
+     *   properties (fields) to be stored for each object of this type. The
+     *   value corresponding to each of those member names is the type of
+     *   value to be stored in that property, and may be any of: "String",
+     *   "LongString", "Date", "Key", "Integer", "Float", "KeyArray",
+     *   "StringArray", "LongStringArray", or "NumberArray".
+     *
+     * @param keyField {String|Array}
+     *   The name of the property that is to be used as the key field. If the
+     *   key is composite, i.e., composed of more than one property, than this
+     *   contains an array of strings, where each string is the name of a
+     *   property, and the key is composed of the fields from each of these
+     *   properties, in the order listed herein.
+     */
     registerPropertyTypes : function(entityType, propertyTypes, keyField)
     {
       // If there's no key field name specified...
@@ -284,7 +343,35 @@ qx.Class.define("rpcjs.dbif.Entity",
     },
 
 
-    /** Register a put and query function, specific to a database */
+    /**
+     * Remove an entity from the database
+     *
+     * @param entity {rpcjs.dbif.Entity}
+     *   An instance of the entity to be removed.
+     */
+    __remove : function(entity)
+    {
+      // This is a temporary place holder.
+      // 
+      // This method is replaced by the remove method of the specific database
+      // that is being used.
+    },
+
+    /**
+     * Register functions which are specific to a certain database interface
+     *
+     * @param query {Function}
+     *   The database-specific function to be used to query the database. It
+     *   must provide the signature of {@link query}.
+     *
+     * @param put {Function}
+     *   The database-specific function to be used to write an entry to the
+     *   database. It must provide the signature of {@link __put}.
+     *
+     * @param remove {Function}
+     *   The database-specific function to be used to remove an entry from the
+     *   database. It must provide the signature of {@link __remove}.
+     */
     registerDatabaseProvider : function(query, put, remove)
     {
       // Save the specified functions.
