@@ -619,19 +619,7 @@ qx.Class.define("rpcjs.appengine.Dbif",
       printWriter = new PrintWriter(Channels.newWriter(writeChannel, "UTF8"));
 
       // Write our blob data as a series of 32k writes
-      segmentSize = blobData.length;
-      while (blobData.length > 0)
-      {
-        // Get the first segmentSize of the remaining blob data
-        segment = blobData.substring(0, segmentSize);
-        
-        // Write it out
-        printWriter.write(segment);
-        
-        // Strip off that first segmentSize so we're ready for the next
-        // iteration
-        blobData = blobData.substring(segmentSize);
-      }
+      printWriter.write(segment);
       
       // Finalize the channel
       writeChannel.closeFinally();
@@ -658,12 +646,20 @@ qx.Class.define("rpcjs.appengine.Dbif",
       var             blob;
       var             blobstoreService;
       var             blobKey;
+      var             blobInfoFactory;
+      var             blobInfo;
+      var             size;
+      var             BlobstoreService;
       var             BlobstoreServiceFactory;
       var             BlobKey;
+      var             BlobInfoFactory;
       
+      BlobstoreService =
+        Packages.com.google.appengine.api.blobstore.BlobstoreService;
       BlobstoreServiceFactory = 
         Packages.com.google.appengine.api.blobstore.BlobstoreServiceFactory;
       BlobKey = Packages.com.google.appengine.api.blobstore.BlobKey;
+      BlobInfoFactory = com.google.appengine.api.blobstore.BlobInfoFactory;
       
       // Get a blobstore service
       blobstoreService = BlobstoreServiceFactory.getBlobstoreService();
@@ -671,12 +667,16 @@ qx.Class.define("rpcjs.appengine.Dbif",
       // Convert the (string) blobId to a blob key
       blobKey = new BlobKey(blobId);
 
+      // Load the information about this blob
+      blobInfoFactory = new BlobInfoFactory();
+      blobInfo = blobInfoFactory.loadBlobInfo(blobKey);
+      size = blobInfo.getSize();
+
       // Retrieve the blob
-      blob = blobstoreService.fetchData(blobKey, 0, 
-                                        BlobstoreService.MAX_BLOB_FETCH_SIZE);
+      blob = blobstoreService.fetchData(blobKey, 0, size);
       
       // Give 'em what they came for
-      return blob;
+      return String(blob);
     },
     
     /**
