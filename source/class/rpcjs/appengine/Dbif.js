@@ -573,6 +573,138 @@ qx.Class.define("rpcjs.appengine.Dbif",
       // Remove this entity from the database
       datastore = Datastore.DatastoreServiceFactory.getDatastoreService();
       datastore["delete"](dbKey);
+    },
+    
+    /**
+     * Add a blob to the database.
+     *
+     * @param blobData {LongString}
+     *   The data to be written as a blob
+     *
+     * @return {String}
+     *   The blob ID of the just-added blob
+     * 
+     * @throws {Error}
+     *   If an error occurs while writing the blob to the database, an Error
+     *   is thrown.
+     */
+    putBlob : function(blobData)
+    {
+      var             key;
+      var             file;
+      var             fileService;
+      var             writeChannel;
+      var             printWriter;
+      var             segment;
+      var             segmentSize;
+      var             FileServiceFactory;
+      var             Channels;
+      var             PrintWriter;
+      
+      FileServiceFactory = 
+        Packages.com.google.appengine.api.files.FileServiceFactory;
+      Channels = java.nio.channels.Channels;
+      PrintWriter = java.io.PrintWriter;
+      
+      // Get a file service
+      fileService = FileServiceFactory.getFileService();
+      
+      // Create a new blob file with mime type "text/plain"
+      file = fileService.createNewBlobFile("text/plain");
+      
+      // Open a write channel, with lock=true so we can finalize it
+      writeChannel = fileService.openWriteChannel(file, true);
+      
+      // Get a print writer for this channel, so we can write a string
+      printWriter = new PrintWriter(Channels.newWriter(writeChannel, "UTF8"));
+
+      // Write our blob data as a series of 32k writes
+      segmentSize = blobData.length;
+      while (blobData.length > 0)
+      {
+        // Get the first segmentSize of the remaining blob data
+        segment = blobData.substring(0, segmentSize);
+        
+        // Write it out
+        printWriter.write(segment);
+        
+        // Strip off that first segmentSize so we're ready for the next
+        // iteration
+        blobData = blobData.substring(segmentSize);
+      }
+      
+      // Finalize the channel
+      writeChannel.closeFinally();
+      
+      // Retrieve the blob key for this file
+      key = fileService.getBlobKey(file).getKeyString();
+      
+      // Give 'em the blob id
+      return key;
+    },
+    
+    /**
+     * Retrieve a blob from the database
+     *
+     * @param blobId {Key}
+     *   The blob ID of the blob to be retrieved
+     * 
+     * @return {LongString}
+     *   The blob data retrieved from the database. If there is no blob with
+     *   the given ID, undefined is returned.
+     */
+    getBlob : function(blobId)
+    {
+      var             blob;
+      var             blobstoreService;
+      var             blobKey;
+      var             BlobstoreServiceFactory;
+      var             BlobKey;
+      
+      BlobstoreServiceFactory = 
+        Packages.com.google.appengine.api.blobstore.BlobstoreServiceFactory;
+      BlobKey = Packages.com.google.appengine.api.blobstore.BlobKey;
+      
+      // Get a blobstore service
+      blobstoreService = BlobstoreServiceFactory.getBlobstoreService();
+      
+      // Convert the (string) blobId to a blob key
+      blobKey = new BlobKey(blobId);
+
+      // Retrieve the blob
+      blob = blobstoreService.fetchData(blobKey, 0, 
+                                        BlobstoreService.MAX_BLOB_FETCH_SIZE);
+      
+      // Give 'em what they came for
+      return blob;
+    },
+    
+    /**
+     * Remove a blob from the database
+     *
+     * @param blobId {Key}
+     *   The blob ID of the blob to be removed. If the specified blob id does
+     *   not exist, this request fails silently.
+     */
+    removeBlob : function(blobId)
+    {
+      var             blobstoreService;
+      var             blobKey;
+      var             BlobstoreServiceFactory;
+      var             BlobKey;
+      
+      BlobstoreServiceFactory = 
+        Packages.com.google.appengine.api.blobstore.BlobstoreServiceFactory;
+      BlobKey = Packages.com.google.appengine.api.blobstore.BlobKey;
+      
+      // Get a blobstore service
+      blobstoreService = BlobstoreServiceFactory.getBlobstoreService();
+      
+      // Convert the (string) blobId to a blob key
+      blobKey = new BlobKey(blobId);
+
+      // Delete the blob
+      blobstoreService["delete"](blobKey);
     }
   },
 

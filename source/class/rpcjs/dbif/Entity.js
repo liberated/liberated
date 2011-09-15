@@ -357,6 +357,66 @@ qx.Class.define("rpcjs.dbif.Entity",
       // that is being used.
     },
 
+
+    /**
+     * Add a blob to the database.
+     *
+     * @param blobData {LongString}
+     *   The data to be written as a blob
+     *
+     * @return {Key}
+     *   The blob ID of the just-added blob
+     * 
+     * @throws {Error}
+     *   If an error occurs while writing the blob to the database, an Error
+     *   is thrown.
+     */
+    putBlob : function(blobData)
+    {
+      // This is a temporary place holder.
+      // 
+      // This method is replaced by the putBlob method of the specific
+      // database that is being used.
+    },
+
+
+    /**
+     * Retrieve a blob from the database
+     *
+     * @param blobId {Key}
+     *   The blob ID of the blob to be retrieved
+     * 
+     * @return {LongString}
+     *   The blob data retrieved from the database. If there is no blob with
+     *   the given ID, undefined is returned.
+     */
+    getBlob : function(entity)
+    {
+      // This is a temporary place holder.
+      // 
+      // This method is replaced by the getBlob method of the specific
+      // database that is being used.
+    },
+
+
+    /**
+     * Remove a blob from the database
+     *
+     * @param blobId {Key}
+     *   The blob ID of the blob to be removed. If the specified blob id does
+     *   not exist, this request fails silently.
+     */
+    removeBlob : function(entity)
+    {
+      // This is a temporary place holder.
+      // 
+      // This method is replaced by the removeBlob method of the specific
+      // database that is being used.
+    },
+
+
+
+
     /**
      * Register functions which are specific to a certain database interface
      *
@@ -371,13 +431,29 @@ qx.Class.define("rpcjs.dbif.Entity",
      * @param remove {Function}
      *   The database-specific function to be used to remove an entry from the
      *   database. It must provide the signature of {@link __remove}.
+     *
+     * @param getBlob {Function}
+     *   The database-specific function to be used to retrieve a blob from the
+     *   database. It must provide the signature of {@link __getBlob}.
+     *
+     * @param putBlob {Function}
+     *   The database-specific function to be used to write a blob to the
+     *   database. It must provide the signature of {@link __putBlob}.
+     *
+     * @param removeBlob {Function}
+     *   The database-specific function to be used to remove a blob from the
+     *   database. It must provide the signature of {@link __removeBlob}.
      */
-    registerDatabaseProvider : function(query, put, remove)
+    registerDatabaseProvider : function(query, put, remove,
+                                        getBlob, putBlob, removeBlob)
     {
       // Save the specified functions.
       rpcjs.dbif.Entity.query = query;
       rpcjs.dbif.Entity.__put = put;
       rpcjs.dbif.Entity.__remove = remove;
+      rpcjs.dbif.Entity.getBlob = getBlob;
+      rpcjs.dbif.Entity.putBlob = putBlob;
+      rpcjs.dbif.Entity.removeBlob = removeBlob;
     }
   },
 

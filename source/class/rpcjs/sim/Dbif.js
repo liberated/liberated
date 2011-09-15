@@ -38,6 +38,9 @@ qx.Class.define("rpcjs.sim.Dbif",
     /** The default database. See {@link setDb}. */
     Database : null,
     
+    /** The database map entry to use for blobs */
+    BlobStorage : "**BLOB**",
+
     /** 
      * The next value to use for an auto-generated key for an entity
      */
@@ -551,6 +554,94 @@ qx.Class.define("rpcjs.sim.Dbif",
         qx.Bootstrap.debug("Writing DB to Web Storage");
         localStorage.simDB = qx.lang.Json.stringify(rpcjs.sim.Dbif.Database);
       }
+    },
+    
+    /**
+     * Add a blob to the database.
+     *
+     * @param blobData {LongString}
+     *   The data to be written as a blob
+     *
+     * @return {String}
+     *   The blob ID of the just-added blob
+     * 
+     * @throws {Error}
+     *   If an error occurs while writing the blob to the database, an Error
+     *   is thrown.
+     */
+    putBlob : function(blobData)
+    {
+      var             blobStorage = rpcjs.sim.Dbif.BlobStorage;
+      var             Db = rpcjs.sim.Dbif.Database;
+      var             key;
+
+      // If there's no blob storage yet...
+      if (! Db[blobStorage])
+      {
+        // ... then create it.
+        Db[blobStorage] = {};
+      }
+      
+      // Retrieve the next id value to use as this blob id
+      key = rpcjs.sim.Dbif.__nextKey++;
+      
+      // Convert it to a string, to allow consistency with other backends
+      key = key + "";
+
+      // Store the blob
+      Db[blobStorage][key] = blobData;
+      
+      // Give 'em the blob id
+      return key;
+    },
+    
+    /**
+     * Retrieve a blob from the database
+     *
+     * @param blobId {Key}
+     *   The blob ID of the blob to be retrieved
+     * 
+     * @return {LongString}
+     *   The blob data retrieved from the database. If there is no blob with
+     *   the given ID, undefined is returned.
+     */
+    getBlob : function(blobId)
+    {
+      var             blobStorage = rpcjs.sim.Dbif.BlobStorage;
+      var             Db = rpcjs.sim.Dbif.Database;
+
+      // Is there any blob storage?
+      if (! Db[blobStorage])
+      {
+        // Nope. The blob must not exist. Not found.
+        return undefined;
+      }
+      
+      // Return the specified blob (or undefined, if it's not there).
+      return Db[blobStorage][blobId];
+    },
+    
+    /**
+     * Remove a blob from the database
+     *
+     * @param blobId {Key}
+     *   The blob ID of the blob to be removed. If the specified blob id does
+     *   not exist, this request fails silently.
+     */
+    removeBlob : function(blobId)
+    {
+      var             blobStorage = rpcjs.sim.Dbif.BlobStorage;
+      var             Db = rpcjs.sim.Dbif.Database;
+
+      // Is there any blob storage?
+      if (! Db[blobStorage])
+      {
+        // Nope. The blob must not exist.
+        return;
+      }
+      
+      // Delete the specified blob
+      delete Db[blobStorage][blobId];
     }
   },
 
