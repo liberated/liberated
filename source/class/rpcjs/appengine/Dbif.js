@@ -299,10 +299,10 @@ qx.Class.define("rpcjs.appengine.Dbif",
                {
                case "String":
                case "Date":
-                 return(String(value));
+                 return value ? String(value) : null;
 
                case "LongString":
-                 return value ? String(value.getValue()) : value;
+                 return value ? String(value.getValue()) : null;
 
                case "Key":
                case "Integer":
@@ -640,7 +640,7 @@ qx.Class.define("rpcjs.appengine.Dbif",
       key = fileService.getBlobKey(file).getKeyString();
       
       // Give 'em the blob id
-      return key;
+      return String(key);
     },
     
     /**
