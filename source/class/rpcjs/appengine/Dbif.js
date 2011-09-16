@@ -619,7 +619,8 @@ qx.Class.define("rpcjs.appengine.Dbif",
       printWriter = new PrintWriter(Channels.newWriter(writeChannel, "UTF8"));
 
       // Write our blob data as a series of 32k writes
-      printWriter.write(segment);
+      printWriter.write(blobData);
+      printWriter.close();
       
       // Finalize the channel
       writeChannel.closeFinally();
@@ -649,6 +650,10 @@ qx.Class.define("rpcjs.appengine.Dbif",
       var             blobInfoFactory;
       var             blobInfo;
       var             size;
+      var             maxFetchSize;
+      var             segmentSize;
+      var             startIndex;
+      var             endIndex;
       var             BlobstoreService;
       var             BlobstoreServiceFactory;
       var             BlobKey;
@@ -673,10 +678,33 @@ qx.Class.define("rpcjs.appengine.Dbif",
       size = blobInfo.getSize();
 
       // Retrieve the blob
-      blob = blobstoreService.fetchData(blobKey, 0, size);
+      blob = [];
+      maxFetchSize = 1015808;
+      startIndex = 0;
+      while (size > 0)
+      {
+        // Determine how much to fetch. Use largest available size within limit.
+        segmentSize = Math.min(size, maxFetchSize);
+        endIndex = startIndex + segmentSize - 1;
+
+        // Fetch a blob segment and convert it to a Java string.
+        blob.push(
+          String(
+            new java.lang.String(
+              blobstoreService.fetchData(blobKey, startIndex, endIndex))));
+        
+        // Update our start index for next time
+        startIndex += segmentSize;
+
+        // We've used up a bunch of the blob. Update remaining size.
+        size -= segmentSize;
+      }
+      
+      // Join all of the parts together.
+      blob = blob.join("");
       
       // Give 'em what they came for
-      return String(blob);
+      return blob;
     },
     
     /**
