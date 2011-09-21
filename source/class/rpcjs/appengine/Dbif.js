@@ -362,7 +362,7 @@ qx.Class.define("rpcjs.appengine.Dbif",
     {
       var             dbKey;
       var             dbEntity;
-      var             datastore;
+      var             datastoreService;
       var             Datastore;
       var             entityData = entity.getData();
       var             keyProperty = entity.getEntityKeyProperty();
@@ -373,8 +373,15 @@ qx.Class.define("rpcjs.appengine.Dbif",
       var             fieldName;
       var             data;
       var             key;
+      var             keyRange;
       var             keyFields = [];
       
+      // Gain access to the datastore service
+      Datastore = Packages.com.google.appengine.api.datastore;
+      datastoreService = 
+        Datastore.DatastoreServiceFactory.getDatastoreService();
+
+
       // Are we working with a composite key?
       if (qx.lang.Type.getClass(keyProperty) == "Array")
       {
@@ -402,6 +409,7 @@ qx.Class.define("rpcjs.appengine.Dbif",
       fields = entity.getDatabaseProperties().fields;
 
       // If there's no key yet...
+      dbKey = null;
       
       // Note: Rhino (and thus App Engine which uses Rhino-compiled code)
       // causes "global" to returned by qx.lang.Type.getClass(key) if key is
@@ -418,11 +426,23 @@ qx.Class.define("rpcjs.appengine.Dbif",
         {
         case "Key":
         case "Number":
-          key = rpcjs.appengine.Dbif.__nextKey++;
+          // Obtain a unique key that no other running instances will obtain.
+          keyRange =
+            datastoreService.allocateIds(entity.getEntityType(), 1);
+          
+          // Get its numeric value
+          dbKey = keyRange.getStart();
+          key = dbKey.getId();
           break;
           
         case "String":
-          key = String(rpcjs.appengine.Dbif.__nextKey++);
+          // Obtain a unique key that no other running instances will obtain.
+          keyRange =
+            datastoreService.allocateIds(entity.getEntityType(), 1);
+          
+          // Get its numeric value
+          dbKey = keyRange.getStart();
+          key = dbKey.getName();
           break;
           
         default:
@@ -451,9 +471,12 @@ qx.Class.define("rpcjs.appengine.Dbif",
         break;
       }
 
-      // Create the database key value
-      Datastore = Packages.com.google.appengine.api.datastore;
-      dbKey = Datastore.KeyFactory.createKey(entity.getEntityType(), key);
+      // If we didn't auto-generate one, ...
+      if (dbKey === null)
+      {
+        // ... create the database key value
+        dbKey = Datastore.KeyFactory.createKey(entity.getEntityType(), key);
+      }
 
       // Create an App Engine entity to store in the database
       dbEntity = new Packages.com.google.appengine.api.datastore.Entity(dbKey);
@@ -525,8 +548,7 @@ qx.Class.define("rpcjs.appengine.Dbif",
       }
 
       // Save it to the database
-      datastore = Datastore.DatastoreServiceFactory.getDatastoreService();
-      datastore.put(dbEntity);
+      datastoreService.put(dbEntity);
     },
     
 
