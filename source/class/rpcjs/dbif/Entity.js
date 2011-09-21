@@ -267,8 +267,8 @@ qx.Class.define("rpcjs.dbif.Entity",
      *     type {String}
      *       "op" -- a logical operation. In this case, there must also be a
      *               "method" member which contains the logical operation to
-     *               be performed. Currently, the only supported operations
-     *               are "and" and "contains". There must also be a "children"
+     *               be performed. Currently, the only supported operation
+     *               at present is  "and". There must also be a "children"
      *               member, which is an array of the critieria to which the
      *               specified operation is applied.
      *
