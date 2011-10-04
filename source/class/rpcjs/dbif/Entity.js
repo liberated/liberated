@@ -303,7 +303,7 @@ qx.Class.define("rpcjs.dbif.Entity",
      *
      *         // The canonicalized value will be a string
      *         type : "String",
-
+     *
      *         // Function to convert a value to lower case
      *         func : function(value)
      *         {
@@ -311,6 +311,11 @@ qx.Class.define("rpcjs.dbif.Entity",
      *         }
      *       }
      *     };
+     *
+     *   Note that if the property being canonicalized is an array, the
+     *   specified function is called once for each member of the array, so
+     *   the resulting canonical value will also be an array, containing
+     *   individually-canonicalized values.
      */
     registerPropertyTypes : function(entityType, 
                                      propertyTypes,
@@ -416,7 +421,6 @@ qx.Class.define("rpcjs.dbif.Entity",
       
       // Get the entity type
       entityType = rpcjs.dbif.Entity.entityTypeMap[classname];
-console.log("entityType = " + entityType);
       if (! entityType)
       {
         throw new Error("No mapped entity type for " + classname);
@@ -424,7 +428,6 @@ console.log("entityType = " + entityType);
       
       // Gain easy access to the canonicalize map.
       canonicalize = rpcjs.dbif.Entity.propertyTypes[entityType].canonicalize;
-console.log("canonicalize = " + canonicalize);
       
       // Are there any canonicalization functions for this class
       if (canonicalize)
@@ -434,8 +437,6 @@ console.log("canonicalize = " + canonicalize);
         // original criteria, so we don't modify the caller's map.
         searchCriteria = qx.util.Serializer.toNativeObject(searchCriteria);
 
-console.log("search criteria = " + qx.dev.Debug.debugObjectToString(searchCriteria));
-        
         // Get a list of the fields to be mapped
         canonFields = qx.lang.Object.getKeys(canonicalize);
         
@@ -455,17 +456,12 @@ console.log("search criteria = " + qx.dev.Debug.debugObjectToString(searchCriter
              // Is this field name one to be canonicalized?
              if (qx.lang.Array.contains(canonFields, criterium.field))
              {
-
-console.log("Replacing: " + criterium.field + "-->" + criterium.value +
-            " with " + canonicalize[criterium.field].prop + "-->" +
-            canonicalize[criterium.field].func(criterium.value));
-               
-               // Replace the field name with its canonical peer
-               criterium.field = canonicalize[criterium.field].prop;
-               
                // Replace the value with the canonical version
                criterium.value = 
                  canonicalize[criterium.field].func(criterium.value);
+
+               // Replace the field name with its canonical peer
+               criterium.field = canonicalize[criterium.field].prop;
              }
            }
            else if (criterium.children)
@@ -649,6 +645,7 @@ console.log("Replacing: " + criterium.field + "-->" + criterium.value +
       var             propertyTypes;
       var             canonicalize;
       var             data;
+      var             newArray;
 
       // Retrieve the property data
       data = this.getData();
@@ -660,7 +657,27 @@ console.log("Replacing: " + criterium.field + "-->" + criterium.value +
       {
         for (name in canonicalize)
         {
-          data[canonicalize[name].prop] = canonicalize[name].func(data[name]);
+          // If the property is an array type, ...
+          if ([
+                "KeyArray",
+                "StringArray",
+                "LongStringArray",
+                "NumberArray" 
+              ].contains(propertyTypes.fields[name]))
+          {
+            // ... then canonicalize each value within the array
+            newArray = [];
+            data[name].forEach(
+              function(elem)
+              {
+                newArray.push(canonicalize[name].func(elem));
+              });
+            data[canonicalize[name].prop] = newArray;
+          }
+          else
+          {
+            data[canonicalize[name].prop] = canonicalize[name].func(data[name]);
+          }
         }
       }
 
