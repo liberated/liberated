@@ -430,7 +430,7 @@ qx.Class.define("rpcjs.dbif.Entity",
       canonicalize = rpcjs.dbif.Entity.propertyTypes[entityType].canonicalize;
       
       // Are there any canonicalization functions for this class
-      if (canonicalize)
+      if (canonicalize && searchCriteria)
       {
         // Yup. Rebuild the search criteria, replacing non-canonicalized
         // fields with their peer canonical fields. Start with a clone of the
@@ -658,12 +658,14 @@ qx.Class.define("rpcjs.dbif.Entity",
         for (name in canonicalize)
         {
           // If the property is an array type, ...
-          if ([
-                "KeyArray",
-                "StringArray",
-                "LongStringArray",
-                "NumberArray" 
-              ].contains(propertyTypes.fields[name]))
+          if (qx.lang.Array.contains(
+                [
+                  "KeyArray",
+                  "StringArray",
+                  "LongStringArray",
+                  "NumberArray" 
+                ],
+                propertyTypes.fields[name]))
           {
             // ... then canonicalize each value within the array
             newArray = [];
