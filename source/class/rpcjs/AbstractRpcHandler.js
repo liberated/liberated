@@ -61,7 +61,7 @@ qx.Class.define("rpcjs.AbstractRpcHandler",
      * 
      * @param error {rpcjs.rpc.error.Error}
      *   An error object to be set if an error is encountered in instantiating
-     *   the requested serviced method.
+     *   the requested service method.
      * 
      * @return {Function}
      *   The service method associated with the specified method name.
