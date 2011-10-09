@@ -216,6 +216,10 @@ qx.Class.define("rpcjs.dbif.Entity",
   
   statics :
   {
+    /** Whether to strip the canonocalized fields from query results */
+    DEFAULT_STRIP_CANON : true,
+
+
     /** Map from classname to entity type */
     entityTypeMap : {},
 
@@ -400,12 +404,21 @@ qx.Class.define("rpcjs.dbif.Entity",
      *   the maps of type "sort", there may be any number, and their order in
      *   the array is the order the sort is applied on each field. 
      *
+     *   A final "type" is called "option", in which case there must be a
+     *   "name" field to specify which option is being set, and a "value"
+     *   field which is of the correct type for the specified name. The
+     *   possible option names and values types are:
+     *
+     *     stripCanon : boolean (default rpcjs.dbif.Entity.DEFAULT_STRIP_CANON)
+     *     
+     *
      *   An example resultCriteria value might be,
      *   [
      *     { type : "offset", value : 10 },
      *     { type : "limit",  value : 5  },
      *     { type : "sort",   field : "uploadTime", order : "desc" },
-     *     { type : "sort",   field : "numLikes" , order : "asc" }
+     *     { type : "sort",   field : "numLikes"  , order : "asc" }
+     *     { type : "option", name  : "stripCanon", value : true }
      *   ]
      *
      *
@@ -415,9 +428,11 @@ qx.Class.define("rpcjs.dbif.Entity",
      */
     query : function(classname, searchCriteria, resultCriteria)
     {
+      var             ret;
       var             entityType;
       var             canonicalize;
       var             canonFields;
+      var             bStripCanon = rpcjs.dbif.Entity.DEFAULT_STRIP_CANON;
       
       // Get the entity type
       entityType = rpcjs.dbif.Entity.entityTypeMap[classname];
@@ -428,7 +443,12 @@ qx.Class.define("rpcjs.dbif.Entity",
       
       // Gain easy access to the canonicalize map.
       canonicalize = rpcjs.dbif.Entity.propertyTypes[entityType].canonicalize;
-      
+      if (canonicalize)
+      {
+        // Get a list of the fields to be mapped
+        canonFields = qx.lang.Object.getKeys(canonicalize);
+      }
+
       // Are there any canonicalization functions for this class
       if (canonicalize && searchCriteria)
       {
@@ -437,9 +457,6 @@ qx.Class.define("rpcjs.dbif.Entity",
         // original criteria, so we don't modify the caller's map.
         searchCriteria = qx.util.Serializer.toNativeObject(searchCriteria);
 
-        // Get a list of the fields to be mapped
-        canonFields = qx.lang.Object.getKeys(canonicalize);
-        
         // Recursively descend through the search criteria, replacing
         // non-canonicalized field names with their canonical peer.
         (function replaceCanonFields(criterium)
@@ -476,9 +493,51 @@ qx.Class.define("rpcjs.dbif.Entity",
          })(searchCriteria);
       }
 
-      return rpcjs.dbif.Entity.__query(classname, 
-                                       searchCriteria, 
-                                       resultCriteria);
+      // Issue the query
+      ret = rpcjs.dbif.Entity.__query(classname, 
+                                      searchCriteria, 
+                                      resultCriteria);
+      
+      // Match options
+      if (resultCriteria)
+      {
+        resultCriteria.forEach(
+          function(criterium)
+          {
+            if (criterium.type == "option")
+            {
+              switch(criterium.name)
+              {
+              case "stripCanon": // strip canonical fields from result
+                bStripCanon = criterium.value;
+                break;
+                
+              default:
+                this.warn("Unrecognized option name: " + criterium.name);
+                break;
+              }
+            }
+          });
+      }
+      
+
+      // If there is a canonicalization map...
+      if (bStripCanon && canonicalize)
+      {
+        // ... then for each entry in the canonicalization map, ...
+        canonFields.forEach(
+          function(field)
+          {
+            // ... delete the corresponding canonical field from the return map
+            ret.forEach(
+              function(item)
+              {
+                delete item[canonicalize[field].prop];
+              });
+          });
+      }
+
+      return ret;
     },
 
 
