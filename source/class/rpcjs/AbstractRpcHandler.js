@@ -39,13 +39,13 @@ qx.Class.define("rpcjs.AbstractRpcHandler",
     _services : null,
 
     /**
-     *  Function to call for authentication to run the service method. If
-     *  null, no authentication is required. Otherwise this should be a
+     *  Function to call for authorization to run the service method. If
+     *  null, no authorization is required. Otherwise this should be a
      *  function which takes as a parameter, the fully-qualified name of the
      *  method to be called, and must return true to allow the function to be
      *  called, or false otherwise, to indicate permission denied.
      */
-    authenticationFunction : null,
+    authorizationFunction : null,
 
     /**
      * The service factory takes a method name and attempts to produce a
@@ -97,8 +97,8 @@ qx.Class.define("rpcjs.AbstractRpcHandler",
       }
 
       // Validate allowability of calling this function
-      if (rpcjs.AbstractRpcHandler.authenticationFunction &&
-          !rpcjs.AbstractRpcHandler.authenticationFunction(fqMethodName))
+      if (rpcjs.AbstractRpcHandler.authorizationFunction &&
+          !rpcjs.AbstractRpcHandler.authorizationFunction(fqMethodName))
       {
         // Permission denied
         error.setCode(
