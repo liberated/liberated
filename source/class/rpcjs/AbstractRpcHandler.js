@@ -49,19 +49,19 @@ qx.Class.define("rpcjs.AbstractRpcHandler",
 
     /**
      * The service factory takes a method name and attempts to produce a
-     * service method that corresponds to that name. In this implementation,
-     * it concatenates the method name to the name of the variable holding the
-     * service map, and looks for corresponding method.
+     * service method that corresponds to that name. This implementation
+     * concatenates the method name to the name of the variable holding
+     * the service map, and looks for a corresponding method.
      * 
      * @param fqMethodName {String}
      *   The fully-qualified name of the method to be called.
      * 
      * @param protocol {String}
-     *   The JSON-RPC protocol being used ("qx1", "1.0", "2.0")
+     *   The JSON-RPC protocol being used ("qx1", "2.0")
      * 
      * @param error {rpcjs.rpc.error.Error}
-     *   An error object to be set if an error is encountered in instantiating
-     *   the requested service method.
+     *   An error object to be set if an error is encountered in 
+     *   instantiating the requested service method.
      * 
      * @return {Function}
      *   The service method associated with the specified method name.

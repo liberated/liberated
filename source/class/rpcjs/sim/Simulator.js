@@ -125,7 +125,8 @@ qx.Class.define("rpcjs.sim.Simulator",
       // Pull the first element off of the queue
       request = requestQueue.shift();
       
-      // Save the transport's post method, and delete it from the request
+      // Save the transport's post method, and delete it from the request. The
+      // handler should never see it.
       transportPost = request.post;
       delete request.post;
 
@@ -141,16 +142,15 @@ qx.Class.define("rpcjs.sim.Simulator",
         // Call the handler's processRequest function.
         response = Simulator.__handlers[i](request, responseHeaders);
         
-        // Restore the transport's post method to the request object
-        request.post = transportPost;
-
         // See what the handler did with this request.
         // status=200 means it handled the request successfully
         // status=501 means we need to try another handler;
-        // anything else means it handled the request but an error occurred
+        // else: handled the request but an error occurred
         if (responseHeaders.status == 200)
         {
-          // Yes it did! Send the response
+          // Yes it did! Restore the transport's post method to 
+          // the request object and send the response.
+          request.post = transportPost;
           request.post(response, responseHeaders);
           break;
         }
@@ -160,11 +160,21 @@ qx.Class.define("rpcjs.sim.Simulator",
         }
         else
         {
-          // The request got handled, but was not successful
+          //
+          // The request got handled, but was not successful. 
+          //
+
+          // Restore the transport's post method to the request 
+          // object and send the error response.
+          request.post = transportPost;
           request.post(null, responseHeaders);
           break;
         }
       }
+
+      // Restore the transport's post method to the request object and send
+      // the error response.
+      request.post = transportPost;
 
       // If we reached the end of the handler list...
       if (i == Simulator.__handlers.length)
@@ -175,6 +185,8 @@ qx.Class.define("rpcjs.sim.Simulator",
             status     : 404,
             statusText : "No handler for URL " + request.url
           };
+
+        // Send the error response.
         request.post(null, responseHeaders);
       }
       

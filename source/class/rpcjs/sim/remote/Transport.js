@@ -108,7 +108,7 @@ qx.Class.define("rpcjs.sim.remote.Transport",
       // Post this request to the simulator's request queue
       rpcjs.sim.Simulator.post(this.__request);
       
-      // Simulate sending state, how that we've "initiated" sending to our
+      // Simulate sending state, now that we've "initiated" sending to our
       // peer. (In reality, it's already arrived.)
       this.setState("sending");
     },
@@ -347,16 +347,16 @@ qx.Class.define("rpcjs.sim.remote.Transport",
 
   defer : function()
   {
-    // Patch qx.io.remote.Exchange with our own send() method that supports
-    // looking at the "need" for a simulated transport.
+    // Patch qx.io.remote.Exchange with our own send() method that 
+    // supports looking at the "need" for a simulated transport.
     qx.Class.patch(qx.io.remote.Exchange, rpcjs.sim.remote.MExchange);
     
-    // Similarly, for qx.io.remote.Request, except it can be a simple include
-    // since it's only adding a property.
+    // Similarly, for qx.io.remote.Request, except it can be a simple 
+    // include since it's only adding a property.
     qx.Class.include(qx.io.remote.Request, rpcjs.sim.remote.MRequest);
 
-    // Patch qx.io.remote.Rpc with our own createRequest() method that supports
-    // setting the simulate property of the request.
+    // Patch qx.io.remote.Rpc with our own createRequest() method that 
+    // supports setting the simulate property of the request.
     qx.Class.patch(qx.io.remote.Rpc, rpcjs.sim.remote.MRpc);
     
     // Register ourself with qx.io.remote.Exchange

@@ -435,9 +435,9 @@ qx.Class.define("rpcjs.rpc.Server",
               // Yup. Initialize to an empty parameter list
               parameters = [];
 
-              // Map the arguments into the parameter array. (We are forgiving
-              // of members of request.params that are not in the formal
-              // parameter list. We just ignore them.)
+              // Map the arguments into the parameter array. (We are 
+              // forgiving of members of request.params that are not
+              // in the formal parameter list. We just ignore them.)
               service.parameterNames.forEach(
                 function(paramName)
                 {
@@ -448,7 +448,7 @@ qx.Class.define("rpcjs.rpc.Server",
           }
           else
           {
-            // No provided parameters is equivalent to an empty parameter list
+            // No provided parameters is equivalent to an empty list
             parameters = [];
           }
 
@@ -523,7 +523,7 @@ qx.Class.define("rpcjs.rpc.Server",
           }
           else
           {
-            // It's not a notification. Run the requested service method now.
+            // It's not a notification. Run requested service method now.
             result = run(request);
           }
 
