@@ -12,27 +12,6 @@ qx.Class.define("rpcjs.sim.Dbif",
   extend  : qx.core.Object,
   type    : "abstract",
 
-  construct : function(rpcKey, rpcUrl)
-  {
-    // Call the superclass constructor
-    this.base(arguments);
-    
-    // Save the rpc key
-    this.__rpcKey = rpcKey;
-
-    // Initialize the services
-    this.__services = {};
-    this.__services[rpcKey] =
-      {
-        features :
-        {
-        }
-      };
-
-    // Start up the RPC simulator
-    new rpcjs.sim.Rpc(this.__services, rpcUrl);
-  },
-  
   statics :
   {
     /** The default database. See {@link setDb}. */
@@ -643,79 +622,5 @@ qx.Class.define("rpcjs.sim.Dbif",
       // Delete the specified blob
       delete Db[blobStorage][blobId];
     }
-  },
-
-  members :
-  {
-    /**
-     * Register a service name and function.
-     *
-     * @param serviceName {String}
-     *   The name of this service within the <rpcKey>.features namespace.
-     *
-     * @param fService {Function}
-     *   The function which implements the given service name.
-     * 
-     * @param paramNames {Array}
-     *   The names of the formal parameters, in order.
-     */
-    registerService : function(serviceName, fService, paramNames)
-    {
-      var             f;
-      
-      // Use this object as the context for the service
-      f = qx.lang.Function.bind(fService, this);
-      
-      // Save the parameter names as a property of the function object
-      f.parameterNames = paramNames;
-
-      // Save the service
-      this.__services[this.__rpcKey].features[serviceName] = f;
-    },
-
-    
-    /**
-     * Retrieve the parameter names for a registered service.
-     *
-     * @param serviceName {String}
-     *   The name of this service within the <rpcKey>.features namespace.
-     *
-     * @return {Array|null|undefined}
-     *   If the specified service exists and parameter names have been
-     *   provided for it, then an array of parameter names is returned.
-     *
-     *   If the service exists but no parameter names were provided in the
-     *   registration of the service, null is returned.
-     *
-     *   If the service does not exist, undefined is returned.
-     */
-    getServiceParamNames : function(serviceName)
-    {
-      // Get the stored service function
-      var f = this.__services[this.__rpcKey].features[serviceName];
-      
-      // Did we find it?
-      if (! f)
-      {
-        // No, it is not a registered function.
-        return undefined;
-      }
-      
-      // Were parameter names registered with the function?
-      if (f.parameterNames)
-      {
-        // Yup. Return a copy of the parameter name array
-        return qx.lang.Array.clone(f.parameterNames);
-      }
-      
-      // The function was registered, but not its parameter names.
-      return null;
-    },
-
-    /** The top-level RPC key, used to index into this.__services */
-    __rpcKey : null,
-
-    /** Remote procedure call services */
-    __services : null
   }
 });

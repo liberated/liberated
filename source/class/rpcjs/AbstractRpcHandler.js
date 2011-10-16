@@ -23,13 +23,54 @@ qx.Class.define("rpcjs.AbstractRpcHandler",
 {
   extend : qx.core.Object,
 
-  construct : function(services)
+  /**
+   * Base constructor for each RPC handler.
+   *
+   * @param rpcKey {Array}
+   *   The list of prefix keys for access to the set of remote 
+   *   procedure calls supported in this object's services map.
+   *
+   *   Example: If the passed parameter is [ "sys", "fs" ] and 
+   *   one of the methods later added is "read" then the remote
+   *   procedure call will be called "sys.fs.read", and the services
+   *   map will contain:
+   *
+   *   {
+   *     sys :
+   *     {
+   *       fs :
+   *       {
+   *         read : function()
+   *         {
+   *           // implementation of sys.fs.read()
+   *         }
+   *       }
+   *     }
+   *   }
+   */
+  construct : function(rpcKey)
   {
-    // Save the services map.
+    var             i;
+    var             services = {};
+    var             part;
+
+    // Call the superclass constructor
+    this.base(arguments);
+
+    // Initialize the services
     rpcjs.AbstractRpcHandler._services = services;
     
+    // Add each of the RPC keys
+    for (i = 0, part = services; i < rpcKey.length; i++)
+    {
+      part = part[rpcKey[i]] = {};
+    }
+    
+    // Store the final part, where registered services will go
+    rpcjs.AbstractRpcHandler._servicesByKey = part;
+    
     // Get an RPC Server instance.
-    this._rpcServer = new rpcjs.rpc.Server(
+    this.__rpcServer = new rpcjs.rpc.Server(
       rpcjs.AbstractRpcHandler._serviceFactory);
   },
   
@@ -37,6 +78,12 @@ qx.Class.define("rpcjs.AbstractRpcHandler",
   {
     /** The services map */
     _services : null,
+    
+    /** 
+     * Reference to the final component of the services map, where registered
+     * services are placed.
+     */
+    _servicesByKey : null,
 
     /**
      *  Function to call for authorization to run the service method. If
@@ -74,7 +121,7 @@ qx.Class.define("rpcjs.AbstractRpcHandler",
       // evaluate it in hopes of getting a method reference.
       //
       // We have a dot-separated fully-qualified method name. We want to
-      // access that entry in the map of maps in this.__services. Using the
+      // access that entry in the map of maps in _services. Using the
       // index notation won't work, since it's multiple levels deep
       // (i.e. fqMethodName might be something like "a.b.c").
       // 
@@ -112,6 +159,117 @@ qx.Class.define("rpcjs.AbstractRpcHandler",
       
       // Give 'em the reference to the method they can call.
       return method;
+    },
+    
+    /**
+     * Register a service name and function.
+     *
+     * @param serviceName {String}
+     *   The name of this service within the <[rpcKey]> namespace.
+     *
+     * @param fService {Function}
+     *   The function which implements the given service name.
+     * 
+     * @param context {Object}
+     *   The context in which the service function should be called
+     * 
+     * @param paramNames {Array}
+     *   The names of the formal parameters, in order.
+     */
+    registerService : function(serviceName, fService, context, paramNames)
+    {
+      var             f;
+      
+      // Use this object as the context for the service
+      f = qx.lang.Function.bind(fService, context);
+      
+      // Save the parameter names as a property of the function object
+      f.parameterNames = paramNames;
+
+      // Save the service
+      rpcjs.AbstractRpcHandler._servicesByKey[serviceName] = f;
+    },
+
+    
+    /**
+     * Retrieve the parameter names for a registered service.
+     *
+     * @param serviceName {String}
+     *   The name of this service within the <[rpcKey]> namespace.
+     *
+     * @return {Array|null|undefined}
+     *   If the specified service exists and parameter names have been
+     *   provided for it, then an array of parameter names is returned.
+     *
+     *   If the service exists but no parameter names were provided in the
+     *   registration of the service, null is returned.
+     *
+     *   If the service does not exist, undefined is returned.
+     */
+    getServiceParamNames : function(serviceName)
+    {
+      // Get the stored service function
+      var f = rpcjs.AbstractRpcHandler._servicesByKey[serviceName];
+      
+      // Did we find it?
+      if (! f)
+      {
+        // No, it is not a registered function.
+        return undefined;
+      }
+      
+      // Were parameter names registered with the function?
+      if (f.parameterNames)
+      {
+        // Yup. Return a copy of the parameter name array
+        return qx.lang.Array.clone(f.parameterNames);
+      }
+      
+      // The function was registered, but not its parameter names.
+      return null;
+    }
+  },
+  
+  members :
+  {
+    /**
+     * Register a service name and function. This is just a convenience member
+     * method that calls the static function of the same name.
+     *
+     * @param serviceName {String}
+     *   The name of this service within the <[rpcKey]> namespace.
+     *
+     * @param fService {Function}
+     *   The function which implements the given service name.
+     * 
+     * @param context {Object}
+     *   The context in which the service function should be called
+     * 
+     * @param paramNames {Array}
+     *   The names of the formal parameters, in order.
+     */
+    registerService : function(serviceName, fService, context, paramNames)
+    {
+      rpcjs.AbstractRpcHandler.registerService(serviceName,
+                                               fService,
+                                               context,
+                                               paramNames);
+    },
+
+    /**
+     * Process an incoming request which is presumably a JSON-RPC request.
+     * 
+     * @param jsonData {String}
+     *   The JSON-encoded RPC request to be processed
+     * 
+     * @return {String}
+     *   Upon success, the JSON-encoded result of the RPC request is returned.
+     *   Otherwise, null is returned.
+     */
+    processRequest : function(jsonData)
+    {
+      // Call the RPC server to process this request
+      return this.__rpcServer.processRequest(jsonData);
     }
   }
 });

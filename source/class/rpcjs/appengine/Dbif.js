@@ -12,27 +12,6 @@ qx.Class.define("rpcjs.appengine.Dbif",
   extend  : qx.core.Object,
   type    : "abstract",
 
-  construct : function(rpcKey, rpcUrl)
-  {
-    // Call the superclass constructor
-    this.base(arguments, rpcKey);
-
-    // Save the rpc key
-    this.__rpcKey = rpcKey;
-
-    // Initialize the services
-    this.__services = {};
-    this.__services[rpcKey] =
-      {
-        features :
-        {
-        }
-      };
-
-    // Start up the App Engine RPC engine
-    this.__rpcHandler = new rpcjs.appengine.Rpc(this.__services, rpcUrl);
-  },
-  
   statics :
   {
     /**
@@ -758,57 +737,6 @@ qx.Class.define("rpcjs.appengine.Dbif",
     }
   },
 
-  members :
-  {
-    /**
-     * Register a service name and function.
-     *
-     * @param serviceName {String}
-     *   The name of this service within the <rpcKey>.features namespace.
-     *
-     * @param fService {Function}
-     *   The function which implements the given service name.
-     * 
-     * @param paramNames {Array}
-     *   The names of the formal parameters, in order.
-     */
-    registerService : function(serviceName, fService, paramNames)
-    {
-      var             f;
-      
-      // Use this object as the context for the service
-      f = qx.lang.Function.bind(fService, this);
-      
-      // Save the parameter names as a property of the function object
-      f.parameterNames = paramNames;
-
-      // Save the service
-      this.__services[this.__rpcKey].features[serviceName] = f;
-    },
-    
-    
-    /**
-     * Process a single request.
-     *
-     * @param jsonData {String}
-     *   The data provide in a POST request
-     *
-     * @return {String}
-     *   Upon success, the JSON-encoded result of the RPC request is returned.
-     *   Otherwise, null is returned.
-     */
-    processRequest : function(jsonData)
-    {
-      return this.__rpcHandler.processRequest(jsonData);
-    },
-
-    /** The top-level RPC key, used to index into this.__services */
-    __rpcKey : null,
-
-    /** Remote procedure call services */
-    __services : null
-  },
-  
   defer : function()
   {
     // Register our put, query, and remove functions

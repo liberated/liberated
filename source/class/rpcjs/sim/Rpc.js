@@ -23,16 +23,44 @@ qx.Class.define("rpcjs.sim.Rpc",
 {
   extend : rpcjs.AbstractRpcHandler,
 
-  construct : function(services, url)
+  /**
+   * Constructor for this RPC handler.
+   *
+   * @param rpcKey {Array}
+   *   The list of prefix keys for access to the set of remote 
+   *   procedure calls supported in this object's services map.
+   *
+   *   Example: If the passed parameter is [ "sys", "fs" ] and 
+   *   one of the methods later added is "read" then the remote
+   *   procedure call will be called "sys.fs.read", and the services
+   *   map will contain:
+   *
+   *   {
+   *     sys :
+   *     {
+   *       fs :
+   *       {
+   *         read : function()
+   *         {
+   *           // implementation of sys.fs.read()
+   *         }
+   *       }
+   *     }
+   *   }
+   * 
+   * @param url {String}
+   *   The URL that must match for this service provider to be used
+   */
+  construct : function(rpckey, url)
   {
     // Call the superclass constructor
-    this.base(arguments, services);
+    this.base(arguments, rpckey);
 
     // Save the URL
     this.setUrl(url);
 
-
-    // Register ourself as a handler for the specified URL.
+    // Register ourself with the simulation transport, as a handler for the
+    // specified URL.
     rpcjs.sim.Simulator.registerHandler(
       qx.lang.Function.bind(this.__processRequest, this));
   },
@@ -91,12 +119,12 @@ qx.Class.define("rpcjs.sim.Rpc",
       jsonData = request.data;
       
       // From here on out, we'll have a successful result (even if the RPC
-      // sends back an error ressponse).
+      // sends back an error response).
       responseHeaders.status = 200;
       responseHeaders.statusText = "";
 
       // Call the RPC server to process this request
-      result = this._rpcServer.processRequest(jsonData);
+      result = this.processRequest(jsonData);
       return result;
     }
   }
