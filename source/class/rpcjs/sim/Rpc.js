@@ -59,8 +59,8 @@ qx.Class.define("rpcjs.sim.Rpc",
     // Save the URL
     this.setUrl(url);
 
-    // Register ourself with the simulation transport, as a handler for the
-    // specified URL.
+    // Register ourself with the simulation transport, as a handler 
+    // for the specified URL.
     rpcjs.sim.Simulator.registerHandler(
       qx.lang.Function.bind(this.__processRequest, this));
   },
@@ -102,7 +102,7 @@ qx.Class.define("rpcjs.sim.Rpc",
       // Make sure we can handle this request
       if (request.url != this.getUrl())
       {
-        // We don't support this one. Response header status was preset for us.
+        // We don't support this one. Response header status was preset.
         return null;
       }
 

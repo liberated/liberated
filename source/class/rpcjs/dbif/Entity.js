@@ -326,7 +326,7 @@ qx.Class.define("rpcjs.dbif.Entity",
                                      keyField,
                                      canonicalize)
     {
-      var             name;
+      var             pn;       // property name
 
       // If there's no key field name specified...
       if (! keyField)
@@ -339,11 +339,11 @@ qx.Class.define("rpcjs.dbif.Entity",
       // Add the canonicalize properties to the property list
       if (canonicalize)
       {
-        for (name in canonicalize)
+        for (pn in canonicalize)
         {
-          // Add the property in which to store the canonicalized value to the
-          // list of database properties.
-          propertyTypes[canonicalize[name].prop] = canonicalize[name].type;
+          // Add the property in which to store the canonicalized value 
+          // to the list of database properties.
+          propertyTypes[canonicalize[pn].prop] = canonicalize[pn].type;
         }
       }
 
@@ -442,7 +442,8 @@ qx.Class.define("rpcjs.dbif.Entity",
       }
       
       // Gain easy access to the canonicalize map.
-      canonicalize = rpcjs.dbif.Entity.propertyTypes[entityType].canonicalize;
+      canonicalize = 
+        rpcjs.dbif.Entity.propertyTypes[entityType].canonicalize;
       if (canonicalize)
       {
         // Get a list of the fields to be mapped
@@ -453,41 +454,42 @@ qx.Class.define("rpcjs.dbif.Entity",
       if (canonicalize && searchCriteria)
       {
         // Yup. Rebuild the search criteria, replacing non-canonicalized
-        // fields with their peer canonical fields. Start with a clone of the
-        // original criteria, so we don't modify the caller's map.
+        // fields with their peer canonical fields. Start with a clone 
+        // of the original criteria, so we don't modify the caller's map.
         searchCriteria = qx.util.Serializer.toNativeObject(searchCriteria);
 
         // Recursively descend through the search criteria, replacing
         // non-canonicalized field names with their canonical peer.
-        (function replaceCanonFields(criterium)
+        (function replaceCanonFields(criterion)
          {
-           // Null or undefined means retrieve all objects. Nothing for us to do
-           if (! criterium)
+           // Null or undefined means retrieve all objects. 
+           if (! criterion)
            {
+             // Nothing for us to do
              return;
            }
 
-           // Is this an element criterium (type="element" or no type field)?
-           if (! criterium.type || criterium.type == "element")
+           // element criterion (type="element" or no type field)?
+           if (! criterion.type || criterion.type == "element")
            {
              // Is this field name one to be canonicalized?
-             if (qx.lang.Array.contains(canonFields, criterium.field))
+             if (qx.lang.Array.contains(canonFields, criterion.field))
              {
                // Replace the value with the canonical version
-               criterium.value = 
-                 canonicalize[criterium.field].func(criterium.value);
+               criterion.value = 
+                 canonicalize[criterion.field].func(criterion.value);
 
                // Replace the field name with its canonical peer
-               criterium.field = canonicalize[criterium.field].prop;
+               criterion.field = canonicalize[criterion.field].prop;
              }
            }
-           else if (criterium.children)
+           else if (criterion.children)
            {
              // If there are children, deal with each of them.
-             criterium.children.forEach(
+             criterion.children.forEach(
                function(child)
                {
-                 replaceCanonFields(criterium[child]);
+                 replaceCanonFields(criterion[child]);
                });
            }
          })(searchCriteria);
@@ -502,18 +504,18 @@ qx.Class.define("rpcjs.dbif.Entity",
       if (resultCriteria)
       {
         resultCriteria.forEach(
-          function(criterium)
+          function(criterion)
           {
-            if (criterium.type == "option")
+            if (criterion.type == "option")
             {
-              switch(criterium.name)
+              switch(criterion.name)
               {
               case "stripCanon": // strip canonical fields from result
-                bStripCanon = criterium.value;
+                bStripCanon = criterion.value;
                 break;
                 
               default:
-                this.warn("Unrecognized option name: " + criterium.name);
+                this.warn("Unrecognized option name: " + criterion.name);
                 break;
               }
             }
