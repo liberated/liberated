@@ -133,29 +133,29 @@ qx.Class.define("rpcjs.appengine.Dbif",
         // If they're not asking for all objects, build a criteria predicate.
         if (searchCriteria)
         {
-            (function(criterium)
+            (function(criterion)
               {
                 var             filterOp;
 
-                switch(criterium.type)
+                switch(criterion.type)
                 {
                 case "op":
-                  switch(criterium.method)
+                  switch(criterion.method)
                   {
                   case "and":
                     // Generate the conditions specified in the children
-                    criterium.children.forEach(arguments.callee);
+                    criterion.children.forEach(arguments.callee);
                     break;
 
                   default:
-                    throw new Error("Unrecognized criterium method: " +
-                                    criterium.method);
+                    throw new Error("Unrecognized criterion method: " +
+                                    criterion.method);
                   }
                   break;
 
                 case "element":
                   // Map the specified filter operator to the db's filter ops.
-                  filterOp = criterium.filterOp || "=";
+                  filterOp = criterion.filterOp || "=";
                   switch(filterOp)
                   {
                   case "<=":
@@ -183,29 +183,29 @@ qx.Class.define("rpcjs.appengine.Dbif",
                     break;
 
                   default:
-                    throw new Error("Unrecognized logical operation: " +
-                                    criterium.filterOp);
+                    throw new Error("Unrecognized comparison operation: " +
+                                    criterion.filterOp);
                   }
 
                   // Add a filter using the provided parameters
-                  if (fields[criterium.field] == "Integer" ||
-                      fields[criterium.field] == "Key")
+                  if (fields[criterion.field] == "Integer" ||
+                      fields[criterion.field] == "Key")
                   {
-                    query.addFilter(criterium.field, 
+                    query.addFilter(criterion.field, 
                                     filterOp,
-                                    java.lang.Integer(criterium.value));
+                                    java.lang.Integer(criterion.value));
                   }
                   else
                   {
-                    query.addFilter(criterium.field, 
+                    query.addFilter(criterion.field, 
                                     filterOp,
-                                    criterium.value);
+                                    criterion.value);
                   }
                   break;
 
                 default:
-                  throw new Error("Unrceognized criterium type: " +
-                                  criterium.type);
+                  throw new Error("Unrceognized criterion type: " +
+                                  criterion.type);
                 }
               })(searchCriteria);
         }
@@ -219,29 +219,29 @@ qx.Class.define("rpcjs.appengine.Dbif",
         {
           // ... then go through the criteria list and handle each.
           resultCriteria.forEach(
-            function(criterium)
+            function(criterion)
             {
-              switch(criterium.type)
+              switch(criterion.type)
               {
               case "limit":
-                options.limit(criterium.value);
+                options.limit(criterion.value);
                 break;
 
               case "offset":
-                options.offset(criterium.value);
+                options.offset(criterion.value);
                 break;
 
               case "sort":
-                query.addSort(criterium.field,
+                query.addSort(criterion.field,
                               {
                                 "asc"  : Query.SortDirection.ASCENDING,
                                 "desc" : Query.SortDirection.DESCENDING
-                              }[criterium.order]);
+                              }[criterion.order]);
                 break;
                 
               default:
-                throw new Error("Unrecognized result criterium type: " +
-                criterium.type);
+                throw new Error("Unrecognized result criterion type: " +
+                criterion.type);
               }
             });
         }

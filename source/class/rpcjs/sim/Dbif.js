@@ -137,7 +137,7 @@ qx.Class.define("rpcjs.sim.Dbif",
       if (searchCriteria)
       {
         builtCriteria =
-          (function(criterium)
+          (function(criterion)
             {
               var             i;
               var             ret = "";
@@ -167,20 +167,20 @@ qx.Class.define("rpcjs.sim.Dbif",
                      throw new Error("Unexpected filter operation: " + 
                                      filterOp);
                    }
-                 })(criterium.filterOp);
+                 })(criterion.filterOp);
 
-              switch(criterium.type)
+              switch(criterion.type)
               {
               case "op":
-                switch(criterium.method)
+                switch(criterion.method)
                 {
                 case "and":
                   // Generate the conditions
                   ret += "(";
-                  for (i = 0; i < criterium.children.length; i++)
+                  for (i = 0; i < criterion.children.length; i++)
                   {
-                    ret += arguments.callee(criterium.children[i]);
-                    if (i < criterium.children.length - 1)
+                    ret += arguments.callee(criterion.children[i]);
+                    if (i < criterion.children.length - 1)
                     {
                       ret += " && ";
                     }
@@ -189,63 +189,63 @@ qx.Class.define("rpcjs.sim.Dbif",
                   break;
 
                 default:
-                  throw new Error("Unrecognized criterium method: " +
-                                  criterium.method);
+                  throw new Error("Unrecognized criterion method: " +
+                                  criterion.method);
                 }
                 break;
 
               case "element":
                 // Determine the type of this field
                 propertyTypes = rpcjs.dbif.Entity.propertyTypes;
-                switch(propertyTypes[type].fields[criterium.field])
+                switch(propertyTypes[type].fields[criterion.field])
                 {
                 case "String":
                 case "LongString":
                 case "Date":
-                  if (typeof criterium.value != "string")
+                  if (typeof criterion.value != "string")
                   {
                     qx.Bootstrap.warn(
-                      "Expected criterium value to be string, " +
-                      "got " + typeof(criterium.value));
+                      "Expected criterion value to be string, " +
+                      "got " + typeof(criterion.value));
                     ret += "false";
                   }
                   else
                   {
                     ret += 
-                      "entry[\"" + criterium.field + "\"] " + filterOp +
-                      "\"" + criterium.value + "\" ";
+                      "entry[\"" + criterion.field + "\"] " + filterOp +
+                      "\"" + criterion.value + "\" ";
                   }
                   break;
 
                 case "Key":
                 case "Integer":
                 case "Float":
-                  if (typeof criterium.value != "number")
+                  if (typeof criterion.value != "number")
                   {
                     qx.Bootstrap.warn(
-                      "Expected criterium value to be number, " +
-                      "got " + typeof(criterium.value));
+                      "Expected criterion value to be number, " +
+                      "got " + typeof(criterion.value));
                     ret += "false";
                   }
                   else
                   {
                     ret +=
-                      "entry[\"" + criterium.field + "\"] " + filterOp +
-                      criterium.value;
+                      "entry[\"" + criterion.field + "\"] " + filterOp +
+                      criterion.value;
                   }
                   break;
 
                 case "KeyArray":
                 case "StringArray":
                 case "LongStringArray":
-                  if (typeof criterium.value != "string")
+                  if (typeof criterion.value != "string")
                   {
                     qx.Bootstrap.warn(
-                      "Expected criterium value to be string, " +
-                      "got " + typeof(criterium.value));
+                      "Expected criterion value to be string, " +
+                      "got " + typeof(criterion.value));
                     ret += "false";
                   }
-                  else if (criterium.filterOp)
+                  else if (criterion.filterOp)
                   {
                     qx.Bootstrap.warn(
                       "Filter operations can not be applied to array types");
@@ -254,21 +254,21 @@ qx.Class.define("rpcjs.sim.Dbif",
                   {
                     ret +=
                       "qx.lang.Array.contains(entry[\"" + 
-                      criterium.field + "\"], " + 
-                      "\"" + criterium.value + "\")";
+                      criterion.field + "\"], " + 
+                      "\"" + criterion.value + "\")";
                   }
                   break;
 
                 case "IntegerArray":
                 case "FloatArray":
-                  if (typeof criterium.value != "number")
+                  if (typeof criterion.value != "number")
                   {
                     qx.Bootstrap.warn(
-                      "Expected criterium value to be string, " +
-                      "got " + typeof(criterium.value));
+                      "Expected criterion value to be string, " +
+                      "got " + typeof(criterion.value));
                     ret += "false";
                   }
-                  else if (criterium.filterOp)
+                  else if (criterion.filterOp)
                   {
                     qx.Bootstrap.warn(
                       "Filter operations can not be applied to array types");
@@ -277,7 +277,7 @@ qx.Class.define("rpcjs.sim.Dbif",
                   {
                     ret +=
                       "qx.lang.Array.contains(entry[\"" + 
-                      criterium.field + "\"], " + criterium.value + ")";
+                      criterion.field + "\"], " + criterion.value + ")";
                   }
                   break;
 
@@ -287,8 +287,8 @@ qx.Class.define("rpcjs.sim.Dbif",
                 break;
 
               default:
-                throw new Error("Unrecognized criterium type: " +
-                                criterium.type);
+                throw new Error("Unrecognized criterion type: " +
+                                criterion.type);
               }
 
               return ret;
@@ -313,12 +313,12 @@ qx.Class.define("rpcjs.sim.Dbif",
       {
         // ... then go through the criteria list and handle each.
         resultCriteria.forEach(
-          function(criterium)
+          function(criterion)
           {
-            switch(criterium.type)
+            switch(criterion.type)
             {
             case "limit":
-              limit = criterium.value;
+              limit = criterion.value;
               if (limit <= 0)
               {
                 throw new Error("Request for limit <= 0");
@@ -326,7 +326,7 @@ qx.Class.define("rpcjs.sim.Dbif",
               break;
               
             case "offset":
-              offset = criterium.value;
+              offset = criterion.value;
               if (offset < 0)
               {
                 throw new Error("Request for offset < 0");
@@ -336,15 +336,15 @@ qx.Class.define("rpcjs.sim.Dbif",
             case "sort":
               builtSort = [ "var v1, v2;" ];
               
-              builtSort.push("v1 = a['" + criterium.field + "'];");
-              builtSort.push("v2 = b['" + criterium.field + "'];");
+              builtSort.push("v1 = a['" + criterion.field + "'];");
+              builtSort.push("v2 = b['" + criterion.field + "'];");
               
-              if ( criterium.order === "asc" )
+              if ( criterion.order === "asc" )
               {
                 builtSort.push("if (v1 < v2) return -1;");
                 builtSort.push("if (v1 > v2) return 1;");
               }
-              else if (criterium.order === "desc" )
+              else if (criterion.order === "desc" )
               {
                 builtSort.push("if (v1 > v2) return -1;");
                 builtSort.push("if (v1 < v2) return 1;");
@@ -352,8 +352,8 @@ qx.Class.define("rpcjs.sim.Dbif",
               else
               {
                 throw new Error(
-                  "Unexpected sort order for " + criterium.field + ": " + 
-                  criterium.order);
+                  "Unexpected sort order for " + criterion.field + ": " + 
+                  criterion.order);
               }
               
               builtSort.push("return 0;");
@@ -361,8 +361,8 @@ qx.Class.define("rpcjs.sim.Dbif",
               break;
               
             default:
-              throw new Error("Unrecognized result criterium type: " +
-                              criterium.type);
+              throw new Error("Unrecognized result criterion type: " +
+                              criterion.type);
             }
           });
       }
