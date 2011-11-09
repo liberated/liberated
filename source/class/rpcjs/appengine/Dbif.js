@@ -277,8 +277,10 @@ qx.Class.define("rpcjs.appengine.Dbif",
                switch(type)
                {
                case "String":
-               case "Date":
                  return value ? String(value) : null;
+
+               case "Date":
+                 return value ? Number(value) : null;
 
                case "LongString":
                  return value ? String(value.getValue()) : null;
@@ -480,9 +482,13 @@ qx.Class.define("rpcjs.appengine.Dbif",
 
              case "Key":
              case "Integer":
-             case "Date":
                // Convert JavaScript Number to Java Long to avoid floating point
                return java.lang.Long(String(value));
+
+             case "Date":
+               // If non-null, convert to a Java Long as with Integer;
+               // otherwise return null.
+               return value !== null ? java.lang.Long(String(value)) : null;
 
              case "LongString":
                var Text = Packages.com.google.appengine.api.datastore.Text;
