@@ -480,6 +480,7 @@ qx.Class.define("rpcjs.appengine.Dbif",
 
              case "Key":
              case "Integer":
+             case "Date":
                // Convert JavaScript Number to Java Long to avoid floating point
                return java.lang.Long(String(value));
 
