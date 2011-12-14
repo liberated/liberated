@@ -142,7 +142,7 @@ function getServices()
           // Return an RPC error
           getError : function()
           {
-            var error = new rpcjs.rpc.error.Error("qx1");
+            var error = new liberated.rpc.error.Error("qx1");
             error.setCode(23);
             error.setMessage("This is an application-provided error");
             return error;
