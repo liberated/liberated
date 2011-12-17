@@ -678,8 +678,10 @@ qx.Class.define("liberated.appengine.Dbif",
         Packages.com.google.appengine.api.blobstore.BlobstoreService;
       BlobstoreServiceFactory = 
         Packages.com.google.appengine.api.blobstore.BlobstoreServiceFactory;
-      BlobKey = Packages.com.google.appengine.api.blobstore.BlobKey;
-      BlobInfoFactory = com.google.appengine.api.blobstore.BlobInfoFactory;
+      BlobKey =
+        Packages.com.google.appengine.api.blobstore.BlobKey;
+      BlobInfoFactory = 
+        Packages.com.google.appengine.api.blobstore.BlobInfoFactory;
       
       // Get a blobstore service
       blobstoreService = BlobstoreServiceFactory.getBlobstoreService();
@@ -748,57 +750,78 @@ qx.Class.define("liberated.appengine.Dbif",
 
       // Delete the blob
       blobstoreService["delete"](blobKey);
+    },
+    
+    /**
+     * Initialize the root key. This either retrieves the existing root key
+     * (most typical), or creates it.
+     *
+     * @param bEnable {Boolean}
+     *   Whether to use a real root key (the current case), or not (the 
+     *   obsolete case).
+     *
+     * @return {Boolean}
+     *   The previous value of whether a real root key was being used.
+     */
+    initRootKey : function(bEnable)
+    {
+      var             dbKey;
+      var             dbEntity;
+      var             result;
+      var             bOldEnabled;
+      var             datastore;
+      var             datastoreService;
+      var             Datastore;
+
+      // Gain access to the datastore service
+      Datastore = Packages.com.google.appengine.api.datastore;
+      datastore = Datastore.DatastoreServiceFactory.getDatastoreService();
+      datastoreService = 
+        Datastore.DatastoreServiceFactory.getDatastoreService();
+
+      // Create the key for our root item
+      dbKey = Datastore.KeyFactory.createKey(
+          liberated.appengine.Dbif.__keyRoot, "__root__", "__root__");
+
+      // Retrieve this item if it exists
+      try
+      {
+        result = datastore.get(dbKey);
+      }
+      catch(e)
+      {
+        // Entity not found. Create it.
+        dbEntity =
+          new Packages.com.google.appengine.api.datastore.Entity(dbKey);
+
+        // Give it a single property
+        dbEntity.setProperty("name", "__root__");
+
+        // Save it to the database
+        datastoreService.put(dbEntity);
+      }
+
+      // Save whether we were using a non-null key root
+      bOldEnabled = (liberated.appengine.Dbif.__keyRoot !== null);
+
+      // This key becomes the root of all other entities
+      if (bEnable)
+      {
+        liberated.appengine.Dbif.__keyRoot = dbKey;
+      }
+      else
+      {
+        liberated.appengine.Dbif.__keyRoot = null;
+      }
+      
+      // Give 'em the old value
+      return bOldEnabled;
     }
   },
 
   defer : function()
   {
-    var             dbKey;
-    var             dbEntity;
-    var             result;
-    var             datastore;
-    var             datastoreService;
-    var             Datastore;
-
-    // Register our put, query, and remove functions
-    liberated.dbif.Entity.registerDatabaseProvider(
-      liberated.appengine.Dbif.query,
-      liberated.appengine.Dbif.put,
-      liberated.appengine.Dbif.remove);
-    
-    // Gain access to the datastore service
-    Datastore = Packages.com.google.appengine.api.datastore;
-    datastore = Datastore.DatastoreServiceFactory.getDatastoreService();
-    datastoreService = 
-      Datastore.DatastoreServiceFactory.getDatastoreService();
-
-    // Create the key for our root item
-    dbKey = Datastore.KeyFactory.createKey(
-        liberated.appengine.Dbif.__keyRoot, "__root__", "__root__");
-    
-    // Retrieve this item if it exists
-    try
-    {
-      result = datastore.get(dbKey);
-    }
-    catch(e)
-    {
-      // Entity not found. Create it.
-      dbEntity = new Packages.com.google.appengine.api.datastore.Entity(dbKey);
-      
-      // Give it a single property
-      dbEntity.setProperty("name", "__root__");
-      
-      // Save it to the database
-      datastoreService.put(dbEntity);
-    }
-    
-    // This key becomes the root of all other entities
-    if (false)
-    {
-      liberated.appengine.Dbif.__keyRoot = dbKey;
-      java.lang.System.out.println(
-        "Warning: LIBERATED still using null root key");
-    }
+    // Initialize the root key
+    liberated.appengine.Dbif.initRootKey(false);
   }
 });
