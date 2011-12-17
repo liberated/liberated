@@ -84,6 +84,7 @@ qx.Class.define("liberated.rpc.Server",
      */
     processRequest : function(jsonInput)
     {
+      var             i;
       var             timer;      // timeout object
       var             ret;        // error return object
       var             bBatch;     // whether a batch request is received
@@ -426,6 +427,19 @@ qx.Class.define("liberated.rpc.Server",
           {
             // Use the provided parameter list
             parameters = request.params;
+            
+            // If there are missing (optional) parameters...
+            if (service.parameterNames && 
+                service.parameterNames.length > parameters.length)
+            {
+              // ... then pass undefined for each of those
+              for (i = parameters.length; 
+                   i < service.parameterNames.length; 
+                   i++)
+              {
+                parameters.push(undefined);
+              }
+            }
           }
           else if (qx.lang.Type.isObject(request.params))
           {
@@ -450,6 +464,19 @@ qx.Class.define("liberated.rpc.Server",
           {
             // No provided parameters is equivalent to an empty list
             parameters = [];
+
+            // If there are missing (optional) parameters...
+            if (service.parameterNames && 
+                service.parameterNames.length > parameters.length)
+            {
+              // ... then pass undefined for each of those
+              for (i = parameters.length; 
+                   i < service.parameterNames.length; 
+                   i++)
+              {
+                parameters.push(undefined);
+              }
+            }
           }
 
           // Create a function that will run this one request. We do this to
