@@ -794,6 +794,11 @@ qx.Class.define("liberated.appengine.Dbif",
     }
     
     // This key becomes the root of all other entities
-    liberated.appengine.Dbif.__keyRoot = dbKey;
+    if (false)
+    {
+      liberated.appengine.Dbif.__keyRoot = dbKey;
+      java.lang.System.out.println(
+        "Warning: LIBERATED still using null root key");
+    }
   }
 });
