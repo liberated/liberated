@@ -20,9 +20,10 @@ qx.Class.define("liberated.appengine.Dbif",
     __rpcHandler : null,
 
     /** 
-     * The next value to use for an auto-generated key for an entity
+     * The key of the root element to which all others descend. This keeps all
+     * data in the same locale (pages) so they all update together.
      */
-    __nextKey : 1,
+    __keyRoot : null,
 
     /*
      * Build a composite key.
@@ -107,7 +108,8 @@ qx.Class.define("liberated.appengine.Dbif",
         try
         {
           result =
-            datastore.get(Datastore.KeyFactory.createKey(type, searchCriteria));
+            datastore.get(Datastore.KeyFactory.createKey(
+              liberated.appengine.Dbif.__keyRoot, type, searchCriteria));
         }
         catch(e)
         {
@@ -128,7 +130,7 @@ qx.Class.define("liberated.appengine.Dbif",
       default:
         // Create a new query
         Query = Datastore.Query;
-        query = new Query(type);
+        query = new Query(type, liberated.appengine.Dbif.__keyRoot);
 
         // If they're not asking for all objects, build a criteria predicate.
         if (searchCriteria)
@@ -409,7 +411,8 @@ qx.Class.define("liberated.appengine.Dbif",
         case "Number":
           // Obtain a unique key that no other running instances will obtain.
           keyRange =
-            datastoreService.allocateIds(entity.getEntityType(), 1);
+            datastoreService.allocateIds(
+              liberated.appengine.Dbif.__keyRoot, entity.getEntityType(), 1);
           
           // Get its numeric value
           dbKey = keyRange.getStart();
@@ -419,7 +422,8 @@ qx.Class.define("liberated.appengine.Dbif",
         case "String":
           // Obtain a unique key that no other running instances will obtain.
           keyRange =
-            datastoreService.allocateIds(entity.getEntityType(), 1);
+            datastoreService.allocateIds(
+              liberated.appengine.Dbif.__keyRoot, entity.getEntityType(), 1);
           
           // Get its numeric value
           dbKey = keyRange.getStart();
@@ -456,7 +460,9 @@ qx.Class.define("liberated.appengine.Dbif",
       if (dbKey === null)
       {
         // ... create the database key value
-        dbKey = Datastore.KeyFactory.createKey(entity.getEntityType(), key);
+        dbKey =
+          Datastore.KeyFactory.createKey(
+            liberated.appengine.Dbif.__keyRoot, entity.getEntityType(), key);
       }
 
       // Create an App Engine entity to store in the database
@@ -576,7 +582,8 @@ qx.Class.define("liberated.appengine.Dbif",
 
       // Create the database key value
       Datastore = Packages.com.google.appengine.api.datastore;
-      dbKey = Datastore.KeyFactory.createKey(type, key);
+      dbKey = Datastore.KeyFactory.createKey(
+        liberated.appengine.Dbif.__keyRoot, type, key);
 
       // Remove this entity from the database
       datastore = Datastore.DatastoreServiceFactory.getDatastoreService();
@@ -746,10 +753,47 @@ qx.Class.define("liberated.appengine.Dbif",
 
   defer : function()
   {
+    var             dbKey;
+    var             dbEntity;
+    var             result;
+    var             datastore;
+    var             datastoreService;
+    var             Datastore;
+
     // Register our put, query, and remove functions
     liberated.dbif.Entity.registerDatabaseProvider(
       liberated.appengine.Dbif.query,
       liberated.appengine.Dbif.put,
       liberated.appengine.Dbif.remove);
+    
+    // Gain access to the datastore service
+    Datastore = Packages.com.google.appengine.api.datastore;
+    datastore = Datastore.DatastoreServiceFactory.getDatastoreService();
+    datastoreService = 
+      Datastore.DatastoreServiceFactory.getDatastoreService();
+
+    // Create the key for our root item
+    dbKey = Datastore.KeyFactory.createKey(
+        liberated.appengine.Dbif.__keyRoot, "__root__", "__root__");
+    
+    // Retrieve this item if it exists
+    try
+    {
+      result = datastore.get(dbKey);
+    }
+    catch(e)
+    {
+      // Entity not found. Create it.
+      dbEntity = new Packages.com.google.appengine.api.datastore.Entity(dbKey);
+      
+      // Give it a single property
+      dbEntity.setProperty("name", "__root__");
+      
+      // Save it to the database
+      datastoreService.put(dbEntity);
+    }
+    
+    // This key becomes the root of all other entities
+    liberated.appengine.Dbif.__keyRoot = dbKey;
   }
 });
