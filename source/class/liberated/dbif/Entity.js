@@ -253,6 +253,21 @@ qx.Class.define("liberated.dbif.Entity",
 
 
     /**
+     * Retrieve the property types for a given entity type
+     *
+     * @return {Map}
+     *   A map, where the key fields are class names, and the values are the
+     *   shorter entity type names
+     */
+    getEntityTypes : function()
+    {
+      // Make a deep copy of the results
+      return qx.util.Serializer.toNativeObject( 
+        liberated.dbif.Entity.entityTypeMap);
+    },
+
+
+    /**
      * Register the property types for an entity class. This is called by each
      * subclass, immediately upon loading the subclass (typically in its
      * defer: function), in order to register the names of the properties
@@ -356,7 +371,22 @@ qx.Class.define("liberated.dbif.Entity",
         };
     },
 
-
+    /**
+     * Retrieve the property types for a given entity type
+     *
+     * @param entityType {String}
+     *   The type of entity whose properties are being requested.
+     *
+     * @return {Map}
+     *   A map containing fields: keyField (Number, String or Array), fields
+     *   (Map), and canonicalize (Function).
+     */
+    getPropertyTypes : function(entityType)
+    {
+      // Make a deep copy of the results
+      return qx.util.Serializer.toNativeObject(
+        liberated.dbif.Entity.propertyTypes[entityType]);
+    },
 
     /**
      * Function to query for objects.
@@ -684,7 +714,8 @@ qx.Class.define("liberated.dbif.Entity",
      *   database. It must provide the signature of {@link __removeBlob}.
      */
     registerDatabaseProvider : function(query, put, remove,
-                                        getBlob, putBlob, removeBlob)
+                                        getBlob, putBlob, removeBlob,
+                                        custom)
     {
       // Save the specified functions.
       liberated.dbif.Entity.__query = query;
@@ -693,6 +724,9 @@ qx.Class.define("liberated.dbif.Entity",
       liberated.dbif.Entity.getBlob = getBlob;
       liberated.dbif.Entity.putBlob = putBlob;
       liberated.dbif.Entity.removeBlob = removeBlob;
+      
+      // Save custom (per-backend) functions
+      liberated.dbif.Entity.custom = custom || {};
     }
   },
 
