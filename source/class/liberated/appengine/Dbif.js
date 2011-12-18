@@ -440,7 +440,7 @@ qx.Class.define("liberated.appengine.Dbif",
         
       case "Number":
         // Save this key in the key field
-        entityData[entity.getEntityKeyProperty()] = key;
+        entityData[keyProperty] = key;
         break;
         
       case "Array":
@@ -780,8 +780,7 @@ qx.Class.define("liberated.appengine.Dbif",
         Datastore.DatastoreServiceFactory.getDatastoreService();
 
       // Create the key for our root item
-      dbKey = Datastore.KeyFactory.createKey(
-          liberated.appengine.Dbif.__keyRoot, "__root__", "__root__");
+      dbKey = Datastore.KeyFactory.createKey(null, "__root__", "__root__");
 
       // Retrieve this item if it exists
       try
@@ -822,6 +821,6 @@ qx.Class.define("liberated.appengine.Dbif",
   defer : function()
   {
     // Initialize the root key
-    liberated.appengine.Dbif.initRootKey(false);
+    liberated.appengine.Dbif.initRootKey(true);
   }
 });
