@@ -285,7 +285,8 @@ qx.Class.define("liberated.appengine.Dbif",
                  return value ? Number(value) : null;
 
                case "LongString":
-                 return value ? String(value.getValue()) : null;
+                 return (
+                   value && value.getValue ? String(value.getValue()) : null);
 
                case "Key":
                case "Integer":
@@ -780,7 +781,7 @@ qx.Class.define("liberated.appengine.Dbif",
         Datastore.DatastoreServiceFactory.getDatastoreService();
 
       // Create the key for our root item
-      dbKey = Datastore.KeyFactory.createKey(null, "__root__", "__root__");
+      dbKey = Datastore.KeyFactory.createKey(null, "$$root", "$$root");
 
       // Retrieve this item if it exists
       try
@@ -794,7 +795,7 @@ qx.Class.define("liberated.appengine.Dbif",
           new Packages.com.google.appengine.api.datastore.Entity(dbKey);
 
         // Give it a single property
-        dbEntity.setProperty("name", "__root__");
+        dbEntity.setProperty("name", "$$root");
 
         // Save it to the database
         datastoreService.put(dbEntity);
