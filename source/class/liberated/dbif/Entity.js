@@ -216,6 +216,12 @@ qx.Class.define("liberated.dbif.Entity",
   
   statics :
   {
+    /** Transaction identifier */
+    __transaction : null,
+
+    /** Maximum number of times to try a transaction before failing */
+    MAX_COMMIT_TRIES : 5,
+
     /** Whether to strip the canonocalized fields from query results */
     DEFAULT_STRIP_CANON : true,
 
@@ -613,6 +619,146 @@ qx.Class.define("liberated.dbif.Entity",
 
 
     /**
+     * Function to begin a transaction. The actual function that's used
+     * depends on which database driver gets installed. The database driver
+     * will register the function with us so user code can always use a common
+     * entry point to the function, this.beginTransaction().
+     *
+     * @return {Object}
+     *   A transaction object. It has commit(), rollback(), and isActive() 
+     *   methods.
+     */
+    __beginTransaction : function(entity)
+    {
+      // This is a temporary place holder.
+      // 
+      // This method is replaced by the put method of the specific database
+      // that is being used.
+    },
+
+
+    beginTransaction : function()
+    {
+      // Ensure there's no existing transaction
+      if (liberated.dbif.Entity.__transaction)
+      {
+        throw new Error("Transaction already in progress");
+      }
+
+      // Call the driver-specific function to begin a transaction
+      liberated.dbif.Entity.__transaction = 
+        liberated.dbif.Entity.__beginTransaction();
+      
+      return liberated.dbif.Entity.__transaction;
+    },
+
+    commitTransaction : function()
+    {
+      // Ensure there's a transaction in progress
+      if (! liberated.dbif.Entity.__transaction)
+      {
+        throw new Error("Commit: No transaction in progress");
+      }
+
+      // Call the driver-specific function to commit the transaction
+      liberated.dbif.Entity.__transaction.commit();
+    },
+
+    rollbackTransaction : function()
+    {
+      // Ensure there's a transaction in progress
+      if (! liberated.dbif.Entity.__transaction)
+      {
+        throw new Error("Rollback: No transaction in progress");
+      }
+
+      // Call the driver-specific function to roll back the transaction
+      liberated.dbif.Entity.__transaction.rollback();
+    },
+
+    /**
+     * Run a function in a transaction. This checks whether a transaction
+     * already exists. If not, it begins one for the duration of this
+     * request. It also retries a specified number of times, if the commit
+     * fails.
+     *
+     * @param func {Function}
+     *   The function to be run in the transaction
+     * 
+     * @param args {Array?}
+     *   Additional arguments are passed to the specified function.
+     * 
+     * @param context {Object?}
+     *   Context in which the specified function should be called
+     */
+    asTransaction : function(func, args, context)
+    {
+      var             i;
+      var             bStartedTransaction = false;
+      var             transaction = liberated.dbif.Entity.__transaction;
+      
+      // Is there already a transaction in progress?
+      if (! transaction)
+      {
+        // Nope. Start one.
+        transaction = liberated.dbif.Entity.beginTransaction();
+        
+        // Remember that we started the transaction, so we can commit it too.
+        bStartedTransaction = true;
+      }
+      
+      // If no arguments were provided...
+      if (typeof args == "undefined")
+      {
+        args = [];
+      }
+
+      // If no context was specified...
+      if (typeof context == "undefined")
+      {
+        // then provide one
+        context = new Function();
+      }
+
+      // Retry a number of times if commit fails
+      for (i = 0; i < liberated.dbif.Entity.MAX_COMMIT_TRIES; i++)
+      {
+        try
+        {
+          // Write the data
+          context.apply(func, args);
+          
+          // Did we begin this transaction?
+          if (bStartedTransaction)
+          {
+            // Yup. Commit it
+            transaction.commit();
+          }
+          
+          // All done here. Don't loop again
+          break;
+        }
+        catch (e)
+        {
+          // An error occurred writing or commiting. Retry.
+          if (console && console.warn)
+          {
+            console.warn("Database Write error: " + e);
+          }
+        }
+      }
+
+      // Ensure there's no pending transaction in progress
+      if (transaction.isActive())
+      {
+        transaction.rollback();
+        
+        // This should not have occurred. Let 'em know
+        throw new Error("Write failed");
+      }
+    },
+
+    /**
      * Remove an entity from the database
      *
      * @param entity {liberated.dbif.Entity}
@@ -712,10 +858,17 @@ qx.Class.define("liberated.dbif.Entity",
      * @param removeBlob {Function}
      *   The database-specific function to be used to remove a blob from the
      *   database. It must provide the signature of {@link __removeBlob}.
+     *
+     * @param beginTransaction {Function}
+     *   The database-specific function to be used to begin a transaction. It
+     *   must provide the signature of {@link _beginTransaction}.
+     *
+     * @param custom {Map}
+     *   Map containing database driver-specific features.
      */
     registerDatabaseProvider : function(query, put, remove,
                                         getBlob, putBlob, removeBlob,
-                                        custom)
+                                        beginTransaction, custom)
     {
       // Save the specified functions.
       liberated.dbif.Entity.__query = query;
@@ -724,6 +877,7 @@ qx.Class.define("liberated.dbif.Entity",
       liberated.dbif.Entity.getBlob = getBlob;
       liberated.dbif.Entity.putBlob = putBlob;
       liberated.dbif.Entity.removeBlob = removeBlob;
+      liberated.dbif.Entity.__beginTransaction = beginTransaction;
       
       // Save custom (per-backend) functions
       liberated.dbif.Entity.custom = custom || {};
@@ -781,7 +935,8 @@ qx.Class.define("liberated.dbif.Entity",
       }
 
       // Write this data 
-      liberated.dbif.Entity.__put(this);
+      liberated.dbif.Entity.asTransaction(liberated.dbif.Entity.__put, 
+                                          [ this ]);
       
       // This entity is no longer brand new
       this.setBrandNew(false);
@@ -796,7 +951,8 @@ qx.Class.define("liberated.dbif.Entity",
     removeSelf : function()
     {
       // Remove ourself from the database
-      liberated.dbif.Entity.__remove(this);
+      liberated.dbif.Entity.asTransaction(liberated.dbif.Entity.__remove, 
+                                          [ this ]);
       
       // Mark this entity as brand new again.
       this.setBrandNew(true);

@@ -623,6 +623,45 @@ qx.Class.define("liberated.sim.Dbif",
       
       // Delete the specified blob
       delete Db[blobStorage][blobId];
+    },
+    
+    /**
+     * Begin a transaction.
+     *
+     * @return {Object}
+     *   A transaction object. It has commit(), rollback(), and isActive() 
+     *   methods.
+     */
+    beginTransaction : function()
+    {
+      var             bIsActive = true;
+      var             log =
+        (console && console.log 
+         ? console.log 
+         : function() {} 
+        );
+
+      log("Simulating BEGIN");
+
+      return (
+        {
+          commit : function()
+          {
+            log("Simulating COMMIT");
+            bIsActive = false;
+          },
+          
+          rollback : function()
+          {
+            log("Simulating ROLLBACK");
+            bIsActive = false;
+          },
+          
+          isActive : function()
+          {
+            return bIsActive;
+          }
+        });
     }
   }
 });

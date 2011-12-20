@@ -753,6 +753,28 @@ qx.Class.define("liberated.appengine.Dbif",
       blobstoreService["delete"](blobKey);
     },
     
+    
+    /**
+     * Begin a transaction.
+     *
+     * @return {Object}
+     *   A transaction object. It has commit(), rollback(), and isActive() 
+     *   methods.
+     */
+    beginTransaction : function()
+    {
+      var             datastoreService;
+      var             Datastore;
+
+      // Gain access to the datastore service
+      Datastore = Packages.com.google.appengine.api.datastore;
+      datastoreService = 
+        Datastore.DatastoreServiceFactory.getDatastoreService();
+
+      return datastoreService.beginTransaction();
+    },
+
+
     /**
      * Initialize the root key. This either retrieves the existing root key
      * (most typical), or creates it.
@@ -770,13 +792,11 @@ qx.Class.define("liberated.appengine.Dbif",
       var             dbEntity;
       var             result;
       var             bOldEnabled;
-      var             datastore;
       var             datastoreService;
       var             Datastore;
 
       // Gain access to the datastore service
       Datastore = Packages.com.google.appengine.api.datastore;
-      datastore = Datastore.DatastoreServiceFactory.getDatastoreService();
       datastoreService = 
         Datastore.DatastoreServiceFactory.getDatastoreService();
 
@@ -786,7 +806,7 @@ qx.Class.define("liberated.appengine.Dbif",
       // Retrieve this item if it exists
       try
       {
-        result = datastore.get(dbKey);
+        result = datastoreService.get(dbKey);
       }
       catch(e)
       {
