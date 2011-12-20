@@ -717,7 +717,7 @@ qx.Class.define("liberated.dbif.Entity",
       if (typeof context == "undefined")
       {
         // then provide one
-        context = new Function();
+        context = func;
       }
 
       // Retry a number of times if commit fails
@@ -741,7 +741,7 @@ qx.Class.define("liberated.dbif.Entity",
         catch (e)
         {
           // An error occurred writing or commiting. Retry.
-          if (console && console.warn)
+          if (typeof console != "undefined" && console.warn)
           {
             console.warn("Database Write error: " + e);
           }

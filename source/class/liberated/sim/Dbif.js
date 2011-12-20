@@ -636,7 +636,7 @@ qx.Class.define("liberated.sim.Dbif",
     {
       var             bIsActive = true;
       var             log =
-        (console && console.log 
+        (typeof console != "undefined" && console.log 
          ? console.log 
          : function() {} 
         );
