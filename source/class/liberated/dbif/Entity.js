@@ -223,7 +223,7 @@ qx.Class.define("liberated.dbif.Entity",
     MAX_COMMIT_TRIES : 5,
 
     /** Whether to strip the canonocalized fields from query results */
-    DEFAULT_STRIP_CANON : true,
+    DEFAULT_STRIP_CANON : false, // Leave this false. true breaks things.
 
 
     /** Map from classname to entity type */
@@ -662,6 +662,9 @@ qx.Class.define("liberated.dbif.Entity",
 
       // Call the driver-specific function to commit the transaction
       liberated.dbif.Entity.__transaction.commit();
+      
+      // There's no longer a transaction in progress
+      liberated.dbif.Entity.__transaction = null;
     },
 
     rollbackTransaction : function()
@@ -674,6 +677,9 @@ qx.Class.define("liberated.dbif.Entity",
 
       // Call the driver-specific function to roll back the transaction
       liberated.dbif.Entity.__transaction.rollback();
+      
+      // There's no longer a transaction in progress
+      liberated.dbif.Entity.__transaction = null;
     },
 
     /**
@@ -696,7 +702,20 @@ qx.Class.define("liberated.dbif.Entity",
       var             i;
       var             bStartedTransaction = false;
       var             transaction = liberated.dbif.Entity.__transaction;
+      var             result;
       
+      // If no arguments were provided...
+      if (typeof args == "undefined")
+      {
+        args = [];
+      }
+
+      // Ensure args is an array, since passing it otherwise is a common error
+      if (qx.lang.Type.getClass(args) != "Array")
+      {
+        throw new Error("'args' parameter must be an array");
+      }
+
       // Is there already a transaction in progress?
       if (! transaction)
       {
@@ -707,12 +726,6 @@ qx.Class.define("liberated.dbif.Entity",
         bStartedTransaction = true;
       }
       
-      // If no arguments were provided...
-      if (typeof args == "undefined")
-      {
-        args = [];
-      }
-
       // If no context was specified...
       if (typeof context == "undefined")
       {
@@ -726,13 +739,13 @@ qx.Class.define("liberated.dbif.Entity",
         try
         {
           // Write the data
-          context.apply(func, args);
+          result = context.apply(func, args);
           
           // Did we begin this transaction?
           if (bStartedTransaction)
           {
             // Yup. Commit it
-            transaction.commit();
+            liberated.dbif.Entity.commitTransaction();
           }
           
           // All done here. Don't loop again
@@ -749,13 +762,15 @@ qx.Class.define("liberated.dbif.Entity",
       }
 
       // Ensure there's no pending transaction in progress
-      if (transaction.isActive())
+      if (bStartedTransaction && transaction.isActive())
       {
-        transaction.rollback();
+        liberated.dbif.Entity.rollbackTransaction();
         
         // This should not have occurred. Let 'em know
         throw new Error("Write failed");
       }
+      
+      return result;
     },
 
     /**
