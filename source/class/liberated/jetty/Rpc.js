@@ -21,33 +21,7 @@
  */
 qx.Class.define("liberated.jetty.Rpc",
 {
-  extend : liberated.AbstractRpcHandler,
-
-  construct : function(services, url)
-  {
-    // Call the superclass constructor
-    this.base(arguments, services);
-
-    // The url is ignored in this implementation. We only get here if the url
-    // is pre-determined to be destined to us.
-  },
+  extend : liberated.AbstractRpcHandler
   
-  members :
-  {
-    /**
-     * Process an incoming request which is presumably a JSON-RPC request.
-     * 
-     * @param jsonData {String}
-     *   The data provide in a POST request
-     * 
-     * @return {String}
-     *   Upon success, the JSON-encoded result of the RPC request is returned.
-     *   Otherwise, null is returned.
-     */
-    processRequest : function(jsonData)
-    {
-      // Call the RPC server to process this request
-      return this._rpcServer.processRequest(jsonData);
-    }
-  }
+  // Nothing special to do in this subclass.
 });

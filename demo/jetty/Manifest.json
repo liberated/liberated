@@ -1,12 +1,12 @@
 {
   "info" : 
   {
-    "name" : "RpcJs Demo using Rhino and Jetty",
+    "name" : "LIBERATED Demo using Rhino and Jetty",
 
-    "summary" : "RpcJs Demo using Rhino and Jetty",
+    "summary" : "LIBERATED Demo using Rhino and Jetty",
     "description" : "This is a skeleton for a qooxdoo contribution demo.",
     
-    "homepage" : "http://demo.qooxdoo.org/contrib/RpcJs",
+    "homepage" : "http://github.com/liberated/liberated",
 
     "license" : "LGPL/EPL",
     "authors" : 
@@ -18,12 +18,12 @@
     ],
 
     "version" : "trunk",
-    "qooxdoo-versions": ["1.4", "trunk"]
+    "qooxdoo-versions": ["trunk"]
   },
   
   "provides" : 
   {
-    "namespace"   : "rpcjs.demo",
+    "namespace"   : "liberated.demo",
     "encoding"    : "utf-8",
     "class"       : "source/class",
     "resource"    : "source/resource",

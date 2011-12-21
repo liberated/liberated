@@ -201,12 +201,12 @@ var __arguments = arguments;
    // Now we can set the handlers for our server
    server.setHandler(handlers);
 
-   // Retrieve our services table
-   load(__arguments[0] || "services.js");
-   var services = getServices();
-
    // Initialize the remote procedure call server itself
-   rpc = new liberated.jetty.Rpc(services, "/rpc");
+   rpc = new liberated.jetty.Rpc([ "qooxdoo", "test" ]);
+
+   // Load all of the services
+   load(__arguments[0] || "services.js");
+   var services = new jetty.Services(rpc);
 
    // Start up the server. We're ready to go!
    server.start();

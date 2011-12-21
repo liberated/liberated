@@ -1,6 +1,12 @@
 Create build/script/qxlib-noopt.js with "generate.py qxlib-noopt" in this
 directory.
 
-Create build/index.html and build/script/rpcexample.js from the RpcExample
-contrib directory, using "generate.py build" and copying its build/index.html
-and build/script/rpcexample.js to here.
+Create build/index.html and build/script/rpcexample.js with "generate.py
+build" in this directory, and copy its build/index.html and
+build/script/liberated.demo.js to here.
+
+Run ./server.sh
+
+Connect via the browser to http://localhost:3000
+
+In the URL box, enter: http://localhost:3000/rpc
