@@ -1,3 +1,6 @@
+*.db
 build
 index.html
 liberated.demo.js
+testdb.sh
+testdb.js
