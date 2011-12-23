@@ -14,12 +14,20 @@ qx.Class.define("liberated.jetty.SqliteDbif",
 
   statics :
   {
+    /** Name of the Blob table */
+    BLOB_TABLE_NAME : "__BLOBS__",
+
+    /** Field name within the Blob table, which contains blob data */
+    BLOB_FIELD_NAME : "data",
+
     /** Name of the database file */
-    __dbName       : null,
+    __dbName        : null,
     
     /** Handle to the open database */
-    __db : null,
+    __db            : null,
 
+    /** Whether a transaction is in progress */
+    __bTransactionInProgress : false,
     
     /**
      * Set the name of the SQLite database
@@ -106,7 +114,7 @@ qx.Class.define("liberated.jetty.SqliteDbif",
             }
             
             // Add a spec for this field and a place holder for its value.
-            query += fieldName + " = ?" + i;
+            query += fieldName + " = ?" + i+1;
             
             // Create a parameter entry for this field
             params.push(
@@ -121,7 +129,7 @@ qx.Class.define("liberated.jetty.SqliteDbif",
       case "String":
         // We've been given a non-composite key
         params = [];
-        query = "SELECT * FROM " + type + " WHERE " + keyField + " = ?0";
+        query = "SELECT * FROM " + type + " WHERE " + keyField + " = ?1";
         params.push(
           {
             value : searchCritieria,
@@ -177,7 +185,7 @@ qx.Class.define("liberated.jetty.SqliteDbif",
                   // Add a filter using the provided parameters
                   query.push(criterion.field)
                   query.push(filterOp);
-                  query.push("?" + params.length);
+                  query.push("?" + (params.length + 1));
                   params.push(
                     {
                       value : criterion.value,
@@ -208,7 +216,7 @@ qx.Class.define("liberated.jetty.SqliteDbif",
               switch(criterion.type)
               {
               case "limit":
-                limit = " LIMIT ?" + params.length;
+                limit = " LIMIT ?" + (params.length + 1);
                 params.push(
                   {
                     value : criterion.value,
@@ -217,7 +225,7 @@ qx.Class.define("liberated.jetty.SqliteDbif",
                 break;
 
               case "offset":
-                offset = " OFFSET ?" + params.length;
+                offset = " OFFSET ?" + (params.length + 1);
                 params.push(
                   {
                     value : criterion.value,
@@ -226,7 +234,8 @@ qx.Class.define("liberated.jetty.SqliteDbif",
                 break;
 
               case "sort":
-                sort = " ORDER BY ?" + criterion.field + " " + criterion.order;
+                sort =
+                  " ORDER BY ?" + (criterion.field + 1) + " " + criterion.order;
                 params.push(
                   {
                     value : criterion.field,
@@ -259,7 +268,7 @@ qx.Class.define("liberated.jetty.SqliteDbif",
         params.forEach(
           function(param, i)
           {
-            preparedQuery.bind(i, param.value);
+            preparedQuery.bind(i+1, param.value);
           });
 
         // Execute the query
@@ -281,6 +290,7 @@ qx.Class.define("liberated.jetty.SqliteDbif",
       }
       finally
       {
+        // Clean up
         preparedQuery.dispose();
       }
 
@@ -304,14 +314,11 @@ qx.Class.define("liberated.jetty.SqliteDbif",
                  switch(type)
                  {
                  case "String":
+                 case "LongString":
                    return value ? String(value) : null;
 
                  case "Date":
                    return value ? Number(value) : null;
-
-                 case "LongString":
-                   return (
-                     value && value.getValue ? String(value.getValue()) : null);
 
                  case "Key":
                  case "Integer":
@@ -324,21 +331,10 @@ qx.Class.define("liberated.jetty.SqliteDbif",
                  case "NumberArray":
                    if (value)
                    {
-                     // Initialize the return array
-                     ret = [];
-
-                     // Determine the type of the elements
-                     var elemType = type.replace(/Array/, "");
-
-                     // Convert the elements to their proper types
-                     iterator = value.iterator();
-                     while (iterator.hasNext())
-                     {
-                       // Call ourself with this element
-                       ret.push(arguments.callee(iterator.next(), elemType));
-                     }
-
-                     return ret;
+                     // On the assumption that these arrays are maintained
+                     // only for "smaller" data, they are stored as JSON and
+                     // parsed here.
+                     return qx.lang.Json.parse(value);
                    }
                    else
                    {
@@ -369,10 +365,7 @@ qx.Class.define("liberated.jetty.SqliteDbif",
      */
     put : function(entity)
     {
-      var             dbKey;
-      var             dbEntity;
-      var             datastoreService;
-      var             Datastore;
+      var             i;
       var             entityData = entity.getData();
       var             keyProperty = entity.getEntityKeyProperty();
       var             type = entity.getEntityType();
@@ -380,193 +373,71 @@ qx.Class.define("liberated.jetty.SqliteDbif",
       var             propertyType;
       var             fields;
       var             fieldName;
-      var             data;
-      var             key;
-      var             keyRange;
-      var             keyFields = [];
+      var             fieldNames;
+      var             query;
+      var             params;
+      var             preparedQuery;
       
-      // Gain access to the datastore service
-      Datastore = Packages.com.google.appengine.api.datastore;
-      datastoreService = 
-        Datastore.DatastoreServiceFactory.getDatastoreService();
-
-
-      // Are we working with a composite key?
-      if (qx.lang.Type.getClass(keyProperty) == "Array")
-      {
-        // Yup. Build the composite key from these fields
-        keyProperty.forEach(
-          function(fieldName)
-          {
-            keyFields.push(entityData[fieldName]);
-          });
-        key = liberated.appengine.Dbif._buildCompositeKey(keyFields);
-      }
-      else
-      {
-        // Retrieve the (single field) key
-        key = entityData[keyProperty];
-      }
-
-      // Ensure that there's either a real key or no key; not empty string
-      if (key == "")
-      {
-        throw new Error("Found disallowed empty key");
-      }
-
       // Get the field names for this entity type
       fields = entity.getDatabaseProperties().fields;
-
-      // If there's no key yet...
-      dbKey = null;
       
-      // Note: Rhino (and thus App Engine which uses Rhino-compiled code)
-      // causes "global" to returned by qx.lang.Type.getClass(key) if key is
-      // null or undefined. Without knowing whether it returns "global" in any
-      // other case, we test for those two cases explicitly.
-      switch(key === null || key === undefined
-             ? "Null"
-             : qx.lang.Type.getClass(key))
-      {
-      case "Null":
-      case "Undefined":         // Never occurs due to explicit test above
-        // Generate a new key. Determine what type of key to use.
-        switch(fields[keyProperty])
-        {
-        case "Key":
-        case "Number":
-          // Obtain a unique key that no other running instances will obtain.
-          keyRange =
-            datastoreService.allocateIds(
-              liberated.appengine.Dbif.__keyRoot, entity.getEntityType(), 1);
-          
-          // Get its numeric value
-          dbKey = keyRange.getStart();
-          key = dbKey.getId();
-          break;
-          
-        case "String":
-          // Obtain a unique key that no other running instances will obtain.
-          keyRange =
-            datastoreService.allocateIds(
-              liberated.appengine.Dbif.__keyRoot, entity.getEntityType(), 1);
-          
-          // Get its numeric value
-          dbKey = keyRange.getStart();
-          key = dbKey.getName();
-          break;
-          
-        default:
-          throw new Error("No way to autogenerate key");
-        }
-        
-        // Save this key in the key field
-        entityData[keyProperty] = key;
-        break;
-        
-      case "Number":
-        // Save this key in the key field
-        entityData[keyProperty] = key;
-        break;
-        
-      case "Array":
-        // Build a composite key string from these key values
-        key = liberated.appengine.Dbif._buildCompositeKey(key);
-        break;
-        
-      case "String":
-        // nothing special to do
-        break;
-        
-      default:
-        break;
-      }
+      //
+      // Generate an insertion query
+      //
+      query = [];
+      
+      // Prologue
+      query.push("INSERT OR REPLACE INTO");
+      query.push("type");
 
-      // If we didn't auto-generate one, ...
-      if (dbKey === null)
-      {
-        // ... create the database key value
-        dbKey =
-          Datastore.KeyFactory.createKey(
-            liberated.appengine.Dbif.__keyRoot, entity.getEntityType(), key);
-      }
-
-      // Create an App Engine entity to store in the database
-      dbEntity = new Packages.com.google.appengine.api.datastore.Entity(dbKey);
-
-      // Add each property to the database entity
+      // Field list
+      query.push("(");
+      fieldNames = [];
       for (fieldName in fields)
       {
-        // Map the Java field data to appropriate JavaScript data
-        data =
-          (function(value, type)
-           {
-             var             i;
-             var             v;
-             var             conv;
-             var             jArr;
-
-             switch(type)
-             {
-             case "String":
-             case "Float":
-               return value;
-
-             case "Key":
-             case "Integer":
-               // Convert JavaScript Number to Java Long to avoid floating point
-               return java.lang.Long(String(value));
-
-             case "Date":
-               // If non-null, convert to a Java Long as with Integer;
-               // otherwise return null.
-               return value !== null ? java.lang.Long(String(value)) : null;
-
-             case "LongString":
-               var Text = Packages.com.google.appengine.api.datastore.Text;
-               return value ? new Text(value) : value;
-
-             case "KeyArray":
-             case "StringArray":
-             case "LongStringArray":
-             case "IntegerArray":
-             case "FloatArray":
-               if (type == "IntegerArray")
-               {
-                 // integer Numbers must be converted to Java longs to avoid
-                 // having them saved as floating point values.
-                 conv = function(val)
-                 {
-                   return java.lang.Long(String(val));
-                 };
-               }
-               else
-               {
-                 conv = function(val)
-                 {
-                   return val;
-                 };
-               }
-
-               jArr = new java.util.ArrayList();
-               for (i = 0; value && i < value.length; i++)
-               {
-                 jArr.add(arguments.callee(conv(value[i]),
-                                           type.replace(/Array/, "")));
-               }
-               return jArr;
-
-             default:
-               throw new Error("Unknown property type: " + type);
-             }
-           })(entityData[fieldName], fields[fieldName]);
-
-        // Save this result
-        dbEntity.setProperty(fieldName, data);
+        fieldNames.push(fieldName);
       }
+      query.push(fieldNames.join(","));
+      query.push(")");
 
-      // Save it to the database
-      datastoreService.put(dbEntity);
+      // Value list (to be bound)
+      query.push("VALUES(");
+      i = 1;
+      params = [];
+      for (fieldName in fields)
+      {
+        query.push("?" + i++);
+        params.push(entityData[fieldName]);
+      }
+      query.push(");");
+
+      // Prepare and issue a query
+      preparedQuery = liberated.jetty.SqliteDbif.__db.prepare(query.join(" "));
+      try
+      {
+        // Bind the parameters
+        params.forEach(
+          function(param, i)
+          {
+            preparedQuery.bind(i+1, param.value);
+          });
+        
+        // Execute the insertion query
+        preparedQuery.step();
+        
+        // If the key is auto-generated...
+        if (keyProperty == "uid")
+        {
+          // ... then retrieve the key value and add it to the entity
+          entityData[fieldName] =
+            liberated.jetty.SqliteDbif.__db.getLastInsertId();
+        }
+      }
+      finally
+      {
+        // Clean up
+        preparedQuery.dispose();
+      }
     },
     
 
@@ -582,38 +453,58 @@ qx.Class.define("liberated.jetty.SqliteDbif",
       var             keyProperty = entity.getEntityKeyProperty();
       var             type = entity.getEntityType();
       var             propertyName;
-      var             fields;
-      var             key;
-      var             keyFields = [];
-      var             dbKey;
-      var             datastore;
-      var             Datastore;
+      var             query;
+      var             params;
+      var             preparedQuery;
       
+      query = [];
+      query.push("DELETE FROM");
+      query.push(type);
+      query.push(" WHERE ");
+
       // Are we working with a composite key?
       if (qx.lang.Type.getClass(keyProperty) == "Array")
       {
         // Yup. Build the composite key from these fields
         keyProperty.forEach(
-          function(fieldName)
+          function(fieldName, i)
           {
-            keyFields.push(entityData[fieldName]);
+            if (i > 0)
+            {
+              query.push("AND");
+            }
+            query.push(fieldname);
+            query.push("= ?" + (i + 1));
+            params.push(entityData[fieldName]);
           });
-        key = liberated.sim.Dbif._buildCompositeKey(keyFields);
       }
       else
       {
         // Retrieve the (single field) key
-        key = entityData[keyProperty];
+        query.push(keyProperty);
+        query.push("= ?1");
+        params.push(entityData[keyProperty]);
       }
 
-      // Create the database key value
-      Datastore = Packages.com.google.appengine.api.datastore;
-      dbKey = Datastore.KeyFactory.createKey(
-        liberated.appengine.Dbif.__keyRoot, type, key);
-
-      // Remove this entity from the database
-      datastore = Datastore.DatastoreServiceFactory.getDatastoreService();
-      datastore["delete"](dbKey);
+      // Prepare and issue a query
+      preparedQuery = liberated.jetty.SqliteDbif.__db.prepare(query.join(" "));
+      try
+      {
+        // Bind the parameters
+        params.forEach(
+          function(param, i)
+          {
+            preparedQuery.bind(i+1, param.value);
+          });
+        
+        // Execute the insertion query
+        preparedQuery.step();
+      }
+      finally
+      {
+        // Clean up
+        preparedQuery.dispose();
+      }
     },
     
     /**
@@ -631,46 +522,39 @@ qx.Class.define("liberated.jetty.SqliteDbif",
      */
     putBlob : function(blobData)
     {
+      var             query;
+      var             preparedQuery;
       var             key;
-      var             file;
-      var             fileService;
-      var             writeChannel;
-      var             printWriter;
-      var             segment;
-      var             segmentSize;
-      var             FileServiceFactory;
-      var             Channels;
-      var             PrintWriter;
       
-      FileServiceFactory = 
-        Packages.com.google.appengine.api.files.FileServiceFactory;
-      Channels = java.nio.channels.Channels;
-      PrintWriter = java.io.PrintWriter;
+      // Generate the insertion query
+      query =
+        [
+          "INSERT INTO",
+          liberated.jetty.SqliteDbif.BLOB_TABLE_NAME,
+          "VALUES (?1);"
+        ].join(" ");
       
-      // Get a file service
-      fileService = FileServiceFactory.getFileService();
-      
-      // Create a new blob file with mime type "text/plain"
-      file = fileService.createNewBlobFile("text/plain");
-      
-      // Open a write channel, with lock=true so we can finalize it
-      writeChannel = fileService.openWriteChannel(file, true);
-      
-      // Get a print writer for this channel, so we can write a string
-      printWriter = new PrintWriter(Channels.newWriter(writeChannel, "UTF8"));
+      // Prepare and issue a query
+      preparedQuery = liberated.jetty.SqliteDbif.__db.prepare(query);
+      try
+      {
+        // Bind the data to the query
+        preparedQuery.bind(1, blobData);
+        
+        // Execute the insertion query
+        preparedQuery.step();
+        
+        // Retrieve the key value and add it to the entity
+        key = liberated.jetty.SqliteDbif.__db.getLastInsertId();
+      }
+      finally
+      {
+        // Clean up
+        preparedQuery.dispose();
+      }
 
-      // Write our blob data as a series of 32k writes
-      printWriter.write(blobData);
-      printWriter.close();
-      
-      // Finalize the channel
-      writeChannel.closeFinally();
-      
-      // Retrieve the blob key for this file
-      key = fileService.getBlobKey(file).getKeyString();
-      
       // Give 'em the blob id
-      return String(key);
+      return key;
     },
     
     /**
@@ -685,66 +569,38 @@ qx.Class.define("liberated.jetty.SqliteDbif",
      */
     getBlob : function(blobId)
     {
+      var             query;
+      var             preparedQuery;
       var             blob;
-      var             blobstoreService;
-      var             blobKey;
-      var             blobInfoFactory;
-      var             blobInfo;
-      var             size;
-      var             maxFetchSize;
-      var             segmentSize;
-      var             startIndex;
-      var             endIndex;
-      var             BlobstoreService;
-      var             BlobstoreServiceFactory;
-      var             BlobKey;
-      var             BlobInfoFactory;
       
-      BlobstoreService =
-        Packages.com.google.appengine.api.blobstore.BlobstoreService;
-      BlobstoreServiceFactory = 
-        Packages.com.google.appengine.api.blobstore.BlobstoreServiceFactory;
-      BlobKey =
-        Packages.com.google.appengine.api.blobstore.BlobKey;
-      BlobInfoFactory = 
-        Packages.com.google.appengine.api.blobstore.BlobInfoFactory;
+      // Generate the insertion query
+      query =
+        [
+          "SELECT * FROM",
+          liberated.jetty.SqliteDbif.BLOB_TABLE_NAME,
+          "WHERE",
+          liberated.jetty.SqliteDbif.BLOB_FIELD_NAME,
+          "= ?1;"
+        ].join(" ");
       
-      // Get a blobstore service
-      blobstoreService = BlobstoreServiceFactory.getBlobstoreService();
-      
-      // Convert the (string) blobId to a blob key
-      blobKey = new BlobKey(blobId);
-
-      // Load the information about this blob
-      blobInfoFactory = new BlobInfoFactory();
-      blobInfo = blobInfoFactory.loadBlobInfo(blobKey);
-      size = blobInfo.getSize();
-
-      // Retrieve the blob
-      blob = [];
-      maxFetchSize = 1015808;
-      startIndex = 0;
-      while (size > 0)
+      // Prepare and issue a query
+      preparedQuery = liberated.jetty.SqliteDbif.__db.prepare(query);
+      try
       {
-        // Determine how much to fetch. Use largest available size within limit.
-        segmentSize = Math.min(size, maxFetchSize);
-        endIndex = startIndex + segmentSize - 1;
-
-        // Fetch a blob segment and convert it to a Java string.
-        blob.push(
-          String(
-            new java.lang.String(
-              blobstoreService.fetchData(blobKey, startIndex, endIndex))));
+        // Bind the blob id to the query
+        preparedQuery.bind(1, blobId);
         
-        // Update our start index for next time
-        startIndex += segmentSize;
-
-        // We've used up a bunch of the blob. Update remaining size.
-        size -= segmentSize;
+        // Execute the insertion query
+        preparedQuery.step();
+        
+        // Retrieve the blob data
+        blob = columnValue(0);
       }
-      
-      // Join all of the parts together.
-      blob = blob.join("");
+      finally
+      {
+        // Clean up
+        preparedQuery.dispose();
+      }
       
       // Give 'em what they came for
       return blob;
@@ -759,23 +615,34 @@ qx.Class.define("liberated.jetty.SqliteDbif",
      */
     removeBlob : function(blobId)
     {
-      var             blobstoreService;
-      var             blobKey;
-      var             BlobstoreServiceFactory;
-      var             BlobKey;
+      var             query;
+      var             preparedQuery;
+      var             key;
       
-      BlobstoreServiceFactory = 
-        Packages.com.google.appengine.api.blobstore.BlobstoreServiceFactory;
-      BlobKey = Packages.com.google.appengine.api.blobstore.BlobKey;
+      // Generate the insertion query
+      query =
+        [
+          "DELETE FROM",
+          liberated.jetty.SqliteDbif.BLOB_TABLE_NAME,
+          liberated.jetty.SqliteDbif.BLOB_FIELD_NAME,
+          "= ?1;"
+        ].join(" ");
       
-      // Get a blobstore service
-      blobstoreService = BlobstoreServiceFactory.getBlobstoreService();
-      
-      // Convert the (string) blobId to a blob key
-      blobKey = new BlobKey(blobId);
-
-      // Delete the blob
-      blobstoreService["delete"](blobKey);
+      // Prepare and issue a query
+      preparedQuery = liberated.jetty.SqliteDbif.__db.prepare(query);
+      try
+      {
+        // Bind the data to the query
+        preparedQuery.bind(1, blobData);
+        
+        // Execute the insertion query
+        preparedQuery.step();
+      }
+      finally
+      {
+        // Clean up
+        preparedQuery.dispose();
+      }
     },
     
     
@@ -788,15 +655,103 @@ qx.Class.define("liberated.jetty.SqliteDbif",
      */
     beginTransaction : function()
     {
-      var             datastoreService;
-      var             Datastore;
+      var             query;
+      var             preparedQuery;
 
-      // Gain access to the datastore service
-      Datastore = Packages.com.google.appengine.api.datastore;
-      datastoreService = 
-        Datastore.DatastoreServiceFactory.getDatastoreService();
+      // Generate the insertion query
+      query = "BEGIN;";
+      
+      // Prepare and issue a query
+      preparedQuery = liberated.jetty.SqliteDbif.__db.prepare(query);
+      try
+      {
+        // Execute the insertion query
+        preparedQuery.step();
+      }
+      finally
+      {
+        // Clean up
+        preparedQuery.dispose();
+      }
 
-      return datastoreService.beginTransaction();
+      // A transaction is now in progress
+      liberated.jetty.SqliteDbif.__bTransactionInProgress = true;
+
+      return (
+        {
+          commit   : this.__commitTransaction,
+          rollback : this.__rollbackTransaction,
+          isActive : this.__isActive
+        });
+    },
+    
+    /**
+     * Commit an open transaction
+     */
+    __commitTransaction : function()
+    {
+      var             query;
+      var             preparedQuery;
+
+      // Generate the insertion query
+      query = "COMMIT;";
+      
+      // Prepare and issue a query
+      preparedQuery = liberated.jetty.SqliteDbif.__db.prepare(query);
+      try
+      {
+        // Execute the insertion query
+        preparedQuery.step();
+      }
+      finally
+      {
+        // Clean up
+        preparedQuery.dispose();
+      }
+
+      // The transaction is no longer in progress
+      liberated.jetty.SqliteDbif.__bTransactionInProgress = false;
+    },
+    
+    /**
+     * Roll back an open transaction
+     */
+    __rollbackTransaction : function()
+    {
+      var             query;
+      var             preparedQuery;
+
+      // Generate the insertion query
+      query = "ROLLBACK;";
+      
+      // Prepare and issue a query
+      preparedQuery = liberated.jetty.SqliteDbif.__db.prepare(query);
+      try
+      {
+        // Execute the insertion query
+        preparedQuery.step();
+      }
+      finally
+      {
+        // Clean up
+        preparedQuery.dispose();
+      }
+
+      // The transaction is no longer in progress
+      liberated.jetty.SqliteDbif.__bTransactionInProgress = false;
+    },
+    
+    /**
+     * Determine if there is an open transaction
+     * 
+     * @return {Boolean}
+     *   <i>true</i> if there is a transaction in progress;
+     *   <i>false</i> otherwise
+     */
+    __isActive : function()
+    {
+      // A transaction is now in progress
+      return liberated.jetty.SqliteDbif.__bTransactionInProgress;
     }
   },
 
