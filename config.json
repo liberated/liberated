@@ -1,5 +1,5 @@
 {
-  "name"    : "RpcJs",
+  "name"    : "LIBERATED",
 
   "include" :
   [
@@ -27,12 +27,12 @@
 
   "let" :
   {
-    "APPLICATION"  : "rpcjs",
+    "APPLICATION"  : "liberated",
     "APPLICATION_MAIN_CLASS" : "${APPLICATION}.demo.Demo",
     "QOOXDOO_PATH" : "../../qooxdoo/1.4",
-    //"QXTHEME"      : "rpcjs.theme.modern.Theme",
+    //"QXTHEME"      : "liberated.theme.modern.Theme",
     "QXTHEME"      : "qx.theme.Modern",
-    "API_EXCLUDE"  : ["qx.test.*", "rpcjs.demo.*", "${APPLICATION}.theme.*", "${APPLICATION}.test.*"],
+    "API_EXCLUDE"  : ["qx.test.*", "liberated.demo.*", "${APPLICATION}.theme.*", "${APPLICATION}.test.*"],
     "LOCALES"      : [ "en" ],
     "CACHE"        : "${TMPDIR}/qx${QOOXDOO_VERSION}/cache",
     "ROOT"         : "."
