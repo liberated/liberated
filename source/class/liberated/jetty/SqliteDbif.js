@@ -20,24 +20,134 @@ qx.Class.define("liberated.jetty.SqliteDbif",
     /** Field name within the Blob table, which contains blob data */
     BLOB_FIELD_NAME : "data",
 
-    /** Name of the database file */
-    __dbName        : null,
-    
     /** Handle to the open database */
     __db            : null,
 
     /** Whether a transaction is in progress */
     __bTransactionInProgress : false,
     
+
+
     /**
-     * Set the name of the SQLite database
+     * Initialize the database. This opens the database and creates any
+     * non-existent tables. It throws an error if any existing tables' schema
+     * have changed.
      * 
-     * @param name {String}
+     * This should not be called until all entity types have registered their
+     * property types.
+     * 
+     * @param databaseName {String}
      *   The name of the database file.
      */
-    setDatabaseName : function(name)
+    init : function(databaseName)
     {
-      this.__dbName = name;
+      var             Sq4java = Packages.com.almworks.sqlite4java;
+      var             file;
+      var             type;
+      var             className;
+      var             propertyTypes = liberated.dbif.Entity.propertyTypes;
+      var             entityTypeMap = liberated.dbif.Entity.entityTypeMap;
+      var             keyField;
+      var             field;
+      var             fields;
+      var             query;
+      var             fieldList;
+      var             keyList;
+      var             preparedQuery;
+
+      // Get a handle to the database file
+      file = new java.io.File(databaseName);
+
+      // Open the database
+      liberated.jetty.SqliteDbif.__db =
+        new Sq4java.SQLiteConnection(new java.io.File(file));
+      liberated.jetty.SqliteDbif.__db.open(true);
+      
+      // For each entity type...
+      for (className in entityTypeMap)
+      {
+        type = liberated.dbif.Entity.entityTypeMap[className];
+        keyField = propertyTypes[type].keyField;
+        fields = propertyTypes[type].fields;
+        
+        // Generate a query to retrieve the prior schema for this entity type
+        query = [];
+        query.push("CREATE TABLE IF NOT EXISTS");
+        query.push(type);
+        query.push("(");
+        
+        // Add each of the fields
+        fieldList = [];
+        for (field in fields)
+        {
+          var             fieldData = field + " ";
+
+          switch(fields[field])
+          {
+          case "String":
+          case "LongString":
+          case "KeyArray":
+          case "StringArray":
+          case "LongStringArray":
+          case "NumberArray":
+            fieldData += "TEXT";
+            break;
+
+          case "Date":
+          case "Key":
+          case "Integer":
+            fieldData += "INTEGER";
+            break;
+
+          case "Float":
+            fieldData += "REAL";
+            break;
+          }
+
+          // Add this field's data to the list
+          fieldList.push(fieldData);
+        }
+        
+        // Handle the primary key field(s)
+        keyList = [];
+        
+        // Is the key field an array?
+        if (qx.lang.Type.getClass(keyField) == "Array")
+        {
+          // Yup. Add each of them as an ascending primary key index
+          keyField.forEach(
+            function(field)
+            {
+              keyList.push(field + " ASC");
+            });
+        }
+        else
+        {
+          keyList.push(keyField + " ASC");
+        }
+        
+        // Add the primary key list to the list of fields
+        fieldList.push("PRIMARY KEY (" + keyList.join(", ") + ")");
+
+        // Add the field list to the query
+        query.push(fieldList.join(", "));
+
+        // Create the full query now
+        query = query.join(" ") + ";";
+        
+        // Prepare and issue a query
+        preparedQuery = liberated.jetty.SqliteDbif.__db.prepare(query);
+        try
+        {
+          // Execute the create table query
+          preparedQuery.step();
+        }
+        finally
+        {
+          // Clean up
+          preparedQuery.dispose();
+        }
+      }
     },
 
 
@@ -753,17 +863,5 @@ qx.Class.define("liberated.jetty.SqliteDbif",
       // A transaction is now in progress
       return liberated.jetty.SqliteDbif.__bTransactionInProgress;
     }
-  },
-
-  defer : function()
-  {
-    var         Sq4java = Packages.com.almworks.sqlite4java;
-    var         file;
-    
-    // Get a handle to the database file
-    file = new java.io.File(liberated.jetty.SqliteDbif.__dbName);
-
-    // Open the database
-    liberated.jetty.SqliteDbif.__db.open(true);
   }
 });
