@@ -1,0 +1,23 @@
+K 25
+svn:wc:ra_dav:version-url
+V 30
+/svn/!svn/ver/206/trunk/sqlite
+END
+sqlite3.c
+K 25
+svn:wc:ra_dav:version-url
+V 40
+/svn/!svn/ver/206/trunk/sqlite/sqlite3.c
+END
+sqlite3.h
+K 25
+svn:wc:ra_dav:version-url
+V 40
+/svn/!svn/ver/206/trunk/sqlite/sqlite3.h
+END
+sqlite3ext.h
+K 25
+svn:wc:ra_dav:version-url
+V 43
+/svn/!svn/ver/206/trunk/sqlite/sqlite3ext.h
+END

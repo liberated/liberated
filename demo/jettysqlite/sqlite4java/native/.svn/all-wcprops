@@ -1,0 +1,35 @@
+K 25
+svn:wc:ra_dav:version-url
+V 30
+/svn/!svn/ver/213/trunk/native
+END
+intarray.h
+K 25
+svn:wc:ra_dav:version-url
+V 41
+/svn/!svn/ver/211/trunk/native/intarray.h
+END
+sqlite3_wrap_manual.h
+K 25
+svn:wc:ra_dav:version-url
+V 52
+/svn/!svn/ver/144/trunk/native/sqlite3_wrap_manual.h
+END
+jni_setup.h
+K 25
+svn:wc:ra_dav:version-url
+V 42
+/svn/!svn/ver/162/trunk/native/jni_setup.h
+END
+intarray.c
+K 25
+svn:wc:ra_dav:version-url
+V 41
+/svn/!svn/ver/213/trunk/native/intarray.c
+END
+sqlite3_wrap_manual.c
+K 25
+svn:wc:ra_dav:version-url
+V 52
+/svn/!svn/ver/211/trunk/native/sqlite3_wrap_manual.c
+END

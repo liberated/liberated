@@ -1,0 +1,161 @@
+K 25
+svn:wc:ra_dav:version-url
+V 53
+/svn/!svn/ver/244/trunk/test/com/almworks/sqlite4java
+END
+BlobTests.java
+K 25
+svn:wc:ra_dav:version-url
+V 68
+/svn/!svn/ver/172/trunk/test/com/almworks/sqlite4java/BlobTests.java
+END
+ParallelAccessTests.java
+K 25
+svn:wc:ra_dav:version-url
+V 78
+/svn/!svn/ver/142/trunk/test/com/almworks/sqlite4java/ParallelAccessTests.java
+END
+JobQueueTests.java
+K 25
+svn:wc:ra_dav:version-url
+V 72
+/svn/!svn/ver/192/trunk/test/com/almworks/sqlite4java/JobQueueTests.java
+END
+SQLiteConnectionTests.java
+K 25
+svn:wc:ra_dav:version-url
+V 80
+/svn/!svn/ver/192/trunk/test/com/almworks/sqlite4java/SQLiteConnectionTests.java
+END
+ProfilerTests.java
+K 25
+svn:wc:ra_dav:version-url
+V 72
+/svn/!svn/ver/171/trunk/test/com/almworks/sqlite4java/ProfilerTests.java
+END
+BusyTests.java
+K 25
+svn:wc:ra_dav:version-url
+V 68
+/svn/!svn/ver/142/trunk/test/com/almworks/sqlite4java/BusyTests.java
+END
+SQLiteTestFixture.java
+K 25
+svn:wc:ra_dav:version-url
+V 76
+/svn/!svn/ver/211/trunk/test/com/almworks/sqlite4java/SQLiteTestFixture.java
+END
+SQLiteStatementTests.java
+K 25
+svn:wc:ra_dav:version-url
+V 79
+/svn/!svn/ver/192/trunk/test/com/almworks/sqlite4java/SQLiteStatementTests.java
+END
+SQLiteBackupTests.java
+K 25
+svn:wc:ra_dav:version-url
+V 76
+/svn/!svn/ver/244/trunk/test/com/almworks/sqlite4java/SQLiteBackupTests.java
+END
+DBRunnable.java
+K 25
+svn:wc:ra_dav:version-url
+V 69
+/svn/!svn/ver/143/trunk/test/com/almworks/sqlite4java/DBRunnable.java
+END
+MiscTests.java
+K 25
+svn:wc:ra_dav:version-url
+V 68
+/svn/!svn/ver/199/trunk/test/com/almworks/sqlite4java/MiscTests.java
+END
+Experiment.java
+K 25
+svn:wc:ra_dav:version-url
+V 69
+/svn/!svn/ver/192/trunk/test/com/almworks/sqlite4java/Experiment.java
+END
+RegressionIssue13Tests.java
+K 25
+svn:wc:ra_dav:version-url
+V 81
+/svn/!svn/ver/192/trunk/test/com/almworks/sqlite4java/RegressionIssue13Tests.java
+END
+SQLiteValueTests.java
+K 25
+svn:wc:ra_dav:version-url
+V 75
+/svn/!svn/ver/193/trunk/test/com/almworks/sqlite4java/SQLiteValueTests.java
+END
+LongArrayTests.java
+K 25
+svn:wc:ra_dav:version-url
+V 73
+/svn/!svn/ver/213/trunk/test/com/almworks/sqlite4java/LongArrayTests.java
+END
+RegressionIssue18Tests.java
+K 25
+svn:wc:ra_dav:version-url
+V 81
+/svn/!svn/ver/192/trunk/test/com/almworks/sqlite4java/RegressionIssue18Tests.java
+END
+ProgressHandlerTests.java
+K 25
+svn:wc:ra_dav:version-url
+V 79
+/svn/!svn/ver/172/trunk/test/com/almworks/sqlite4java/ProgressHandlerTests.java
+END
+SQLiteBasicTests.java
+K 25
+svn:wc:ra_dav:version-url
+V 75
+/svn/!svn/ver/172/trunk/test/com/almworks/sqlite4java/SQLiteBasicTests.java
+END
+DirectBufferTests.java
+K 25
+svn:wc:ra_dav:version-url
+V 76
+/svn/!svn/ver/206/trunk/test/com/almworks/sqlite4java/DirectBufferTests.java
+END
+SQLiteConnectionFixture.java
+K 25
+svn:wc:ra_dav:version-url
+V 82
+/svn/!svn/ver/142/trunk/test/com/almworks/sqlite4java/SQLiteConnectionFixture.java
+END
+Suite.java
+K 25
+svn:wc:ra_dav:version-url
+V 64
+/svn/!svn/ver/207/trunk/test/com/almworks/sqlite4java/Suite.java
+END
+BlobComparisonPerformance.java
+K 25
+svn:wc:ra_dav:version-url
+V 84
+/svn/!svn/ver/172/trunk/test/com/almworks/sqlite4java/BlobComparisonPerformance.java
+END
+LoadAllTests.java
+K 25
+svn:wc:ra_dav:version-url
+V 71
+/svn/!svn/ver/174/trunk/test/com/almworks/sqlite4java/LoadAllTests.java
+END
+IncrementalBlobIOAnalysis.java
+K 25
+svn:wc:ra_dav:version-url
+V 84
+/svn/!svn/ver/142/trunk/test/com/almworks/sqlite4java/IncrementalBlobIOAnalysis.java
+END
+SQLPartsTests.java
+K 25
+svn:wc:ra_dav:version-url
+V 72
+/svn/!svn/ver/143/trunk/test/com/almworks/sqlite4java/SQLPartsTests.java
+END
+IncrementalIODemo.java
+K 25
+svn:wc:ra_dav:version-url
+V 76
+/svn/!svn/ver/143/trunk/test/com/almworks/sqlite4java/IncrementalIODemo.java
+END

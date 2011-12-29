@@ -1,0 +1,33 @@
+<project basedir="." name="gant-helper">
+  <property environment="env"/>
+  <property name="gantHome" value="${env.GANT_HOME}"/>
+  <property name="groovyHome" value="${env.GROOVY_HOME}"/>
+
+  <taskdef name="gant" classname="org.codehaus.gant.ant.Gant">
+    <classpath>
+      <fileset dir="${gantHome}/lib" includes="*.jar"/>
+      <fileset dir="${groovyHome}/lib" includes="*.jar"/>
+      <pathelement location="."/>
+    </classpath>
+  </taskdef>
+
+  <target name="integrate">
+    <gant file="build.gant" target="integrate"/>
+  </target>
+
+  <target name="all">
+    <gant file="build.gant" target="all"/>
+  </target>
+
+  <target name="test">
+    <gant file="build.gant" target="test"/>
+  </target>
+
+  <target name="dist">
+    <gant file="build.gant" target="dist"/>
+  </target>
+
+  <target name="collect">
+    <gant file="build.gant" target="collect"/>
+  </target>
+</project>
