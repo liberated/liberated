@@ -758,8 +758,7 @@ qx.Class.define("liberated.appengine.Dbif",
      * Begin a transaction.
      *
      * @return {Object}
-     *   A transaction object. It has commit(), rollback(), and isActive() 
-     *   methods.
+     *   A transaction object. It has commit() and rollback() methods.
      */
     beginTransaction : function()
     {
