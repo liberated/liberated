@@ -1,86 +1,0 @@
-10
-
-dir
-265
-http://sqlite4java.googlecode.com/svn/trunk
-http://sqlite4java.googlecode.com/svn
-
-
-
-2011-12-13T12:07:43.128179Z
-264
-ingwar@almworks.com
-has-props
-
-
-
-
-
-
-
-
-
-
-
-
-
-ea90390e-df39-5419-a790-4a884565447a
-
-test
-dir
-
-java
-dir
-
-sqlite
-dir
-
-idea
-dir
-
-ant
-dir
-
-lib
-dir
-
-native
-dir
-
-NOTES.txt
-file
-
-
-
-
-2011-12-28T15:38:48.000000Z
-40a13ed865b4463425646ec55c17f056
-2007-11-15T23:52:57.669574Z
-31
-sereda
-has-props
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-851
-
-swig
-dir
-
