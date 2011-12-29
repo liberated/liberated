@@ -1,10 +1,13 @@
 /**
  * Copyright (c) 2011 Derrell Lipman
- * Copyright (c) 2011 Reed Spool
  * 
  * License:
  *   LGPL: http://www.gnu.org/licenses/lgpl.html 
  *   EPL : http://www.eclipse.org/org/documents/epl-v10.php
+ */
+
+/*
+#ignore(JavaAdapter)
  */
 
 qx.Class.define("liberated.jetty.SqliteDbif",
@@ -20,13 +23,38 @@ qx.Class.define("liberated.jetty.SqliteDbif",
     /** Field name within the Blob table, which contains blob data */
     BLOB_FIELD_NAME : "data",
 
-    /** Handle to the open database */
-    __db            : null,
 
-    /** Whether a transaction is in progress */
-    __bTransactionInProgress : false,
-    
+    /**
+     * Provide the database handle. Open the database if not already open in
+     * the current thread.
+     * 
+     * @return {Sq4java.SQLiteConnection}
+     */
+    getDB : function()
+    {
+      var             Sq4java = Packages.com.almworks.sqlite4java;
+      var             db;
+      var             file;
 
+      // Have we already opened the database in this thread?
+      db = liberated.jetty.SqliteDbif.__dbPerThread.get();
+      if (db === null)
+      {
+        // Get a handle to the database file
+        file = new java.io.File(liberated.jetty.SqliteDbif.__databaseName);
+
+        // Open the database
+        db = new Sq4java.SQLiteConnection(new java.io.File(file));
+        db.open(true);
+        
+        // Save the database handle
+        liberated.jetty.SqliteDbif.__dbPerThread.set(db);
+      }
+      
+      // Give 'em the database handle
+      return db;
+    },
+      
 
     /**
      * Initialize the database. This opens the database and creates any
@@ -41,7 +69,7 @@ qx.Class.define("liberated.jetty.SqliteDbif",
      */
     init : function(databaseName)
     {
-      var             Sq4java = Packages.com.almworks.sqlite4java;
+      var             db;
       var             file;
       var             type;
       var             className;
@@ -55,14 +83,22 @@ qx.Class.define("liberated.jetty.SqliteDbif",
       var             keyList;
       var             preparedQuery;
 
-      // Get a handle to the database file
-      file = new java.io.File(databaseName);
+      // Save the database name
+      liberated.jetty.SqliteDbif.__databaseName = databaseName;
 
-      // Open the database
-      liberated.jetty.SqliteDbif.__db =
-        new Sq4java.SQLiteConnection(new java.io.File(file));
-      liberated.jetty.SqliteDbif.__db.open(true);
-      
+      // Prepare for one database connection per thread. This is used in getDB()
+      liberated.jetty.SqliteDbif.__dbPerThread = new JavaAdapter(
+        java.lang.ThreadLocal, 
+        {
+          initialValue: function() 
+          {
+            return null;
+          }
+        });
+
+      // Now retrieve this thread's database connection
+      db = liberated.jetty.SqliteDbif.getDB();
+
       // For each entity type...
       for (className in entityTypeMap)
       {
@@ -133,10 +169,10 @@ qx.Class.define("liberated.jetty.SqliteDbif",
         query.push(fieldList.join(", "));
 
         // Create the full query now
-        query = query.join(" ") + ";";
+        query = query.join(" ") + ");";
         
         // Prepare and issue a query
-        preparedQuery = liberated.jetty.SqliteDbif.__db.prepare(query);
+        preparedQuery = db.prepare(query);
         try
         {
           // Execute the create table query
@@ -168,9 +204,7 @@ qx.Class.define("liberated.jetty.SqliteDbif",
     query : function(classname, searchCriteria, resultCriteria)
     {
       var             i;
-      var             Datastore;
-      var             datastore;
-      var             Query;
+      var             db;
       var             query;
       var             params;
       var             preparedQuery;
@@ -227,11 +261,7 @@ qx.Class.define("liberated.jetty.SqliteDbif",
             query += fieldName + " = ?" + i+1;
             
             // Create a parameter entry for this field
-            params.push(
-              {
-                value : searchCriteria[i],
-                type  : fields[fieldName]
-              });
+            params.push(searchCriteria[i]);
           });
         break;
 
@@ -240,11 +270,7 @@ qx.Class.define("liberated.jetty.SqliteDbif",
         // We've been given a non-composite key
         params = [];
         query = "SELECT * FROM " + type + " WHERE " + keyField + " = ?1";
-        params.push(
-          {
-            value : searchCritieria,
-            type  : fields[keyField]
-          });
+        params.push(searchCriteria);
         break;
 
       default:
@@ -293,14 +319,10 @@ qx.Class.define("liberated.jetty.SqliteDbif",
                   filterOp = criterion.filterOp || "=";
 
                   // Add a filter using the provided parameters
-                  query.push(criterion.field)
+                  query.push(criterion.field);
                   query.push(filterOp);
                   query.push("?" + (params.length + 1));
-                  params.push(
-                    {
-                      value : criterion.value,
-                      type  : fields[criterion.field]
-                    });
+                  params.push(criterion.value);
                   break;
 
                 default:
@@ -327,35 +349,19 @@ qx.Class.define("liberated.jetty.SqliteDbif",
               {
               case "limit":
                 limit = " LIMIT ?" + (params.length + 1);
-                params.push(
-                  {
-                    value : criterion.value,
-                    type  : "Integer"
-                  });
+                params.push(criterion.value);
                 break;
 
               case "offset":
                 offset = " OFFSET ?" + (params.length + 1);
-                params.push(
-                  {
-                    value : criterion.value,
-                    type  : "Integer"
-                  });
+                params.push(criterion.value);
                 break;
 
               case "sort":
-                sort =
-                  " ORDER BY ?" + (criterion.field + 1) + " " + criterion.order;
-                params.push(
-                  {
-                    value : criterion.field,
-                    type  : "String"
-                  });
-                params.push(
-                  {
-                    value : criterion.order,
-                    type  : "String"
-                  });
+                sort = " ORDER BY ?" + (params.length + 1);
+                params.push(criterion.field);
+                sort += " ?" + (params.length + 1);
+                params.push(criterion.order);
                 break;
                 
               default:
@@ -370,15 +376,18 @@ qx.Class.define("liberated.jetty.SqliteDbif",
         break;
       }
       
+      // Retrieve this thread's database connection
+      db = liberated.jetty.SqliteDbif.getDB();
+
       // Prepare and issue a query
-      preparedQuery = liberated.jetty.SqliteDbif.__db.prepare(query);
+      preparedQuery = db.prepare(query);
       try
       {
         // Bind the parameters
         params.forEach(
           function(param, i)
           {
-            preparedQuery.bind(i+1, param.value);
+            preparedQuery.bind(i+1, param);
           });
 
         // Execute the query
@@ -392,7 +401,7 @@ qx.Class.define("liberated.jetty.SqliteDbif",
             fieldName = preparedQuery.getColumnName(i);
 
             // Determine the type for this field, and retrieve the value
-            obj[fieldName] = columnValue(i);
+            obj[fieldName] = preparedQuery.columnValue(i);
           }
 
           dbResults.push(obj);
@@ -476,6 +485,7 @@ qx.Class.define("liberated.jetty.SqliteDbif",
     put : function(entity)
     {
       var             i;
+      var             db;
       var             entityData = entity.getData();
       var             keyProperty = entity.getEntityKeyProperty();
       var             type = entity.getEntityType();
@@ -498,7 +508,7 @@ qx.Class.define("liberated.jetty.SqliteDbif",
       
       // Prologue
       query.push("INSERT OR REPLACE INTO");
-      query.push("type");
+      query.push(type);
 
       // Field list
       query.push("(");
@@ -516,20 +526,27 @@ qx.Class.define("liberated.jetty.SqliteDbif",
       params = [];
       for (fieldName in fields)
       {
+        if (i != 1)
+        {
+          query.push(",");
+        }
         query.push("?" + i++);
         params.push(entityData[fieldName]);
       }
       query.push(");");
 
+      // Retrieve this thread's database connection
+      db = liberated.jetty.SqliteDbif.getDB();
+
       // Prepare and issue a query
-      preparedQuery = liberated.jetty.SqliteDbif.__db.prepare(query.join(" "));
+      preparedQuery = db.prepare(query.join(" "));
       try
       {
         // Bind the parameters
         params.forEach(
           function(param, i)
           {
-            preparedQuery.bind(i+1, param.value);
+            preparedQuery.bind(i+1, param);
           });
         
         // Execute the insertion query
@@ -539,8 +556,7 @@ qx.Class.define("liberated.jetty.SqliteDbif",
         if (keyProperty == "uid")
         {
           // ... then retrieve the key value and add it to the entity
-          entityData[fieldName] =
-            liberated.jetty.SqliteDbif.__db.getLastInsertId();
+          entityData[fieldName] = db.getLastInsertId();
         }
       }
       finally
@@ -559,6 +575,7 @@ qx.Class.define("liberated.jetty.SqliteDbif",
      */
     remove : function(entity)
     {
+      var             db;
       var             entityData = entity.getData();
       var             keyProperty = entity.getEntityKeyProperty();
       var             type = entity.getEntityType();
@@ -583,7 +600,7 @@ qx.Class.define("liberated.jetty.SqliteDbif",
             {
               query.push("AND");
             }
-            query.push(fieldname);
+            query.push(fieldName);
             query.push("= ?" + (i + 1));
             params.push(entityData[fieldName]);
           });
@@ -596,15 +613,18 @@ qx.Class.define("liberated.jetty.SqliteDbif",
         params.push(entityData[keyProperty]);
       }
 
+      // Retrieve this thread's database connection
+      db = liberated.jetty.SqliteDbif.getDB();
+
       // Prepare and issue a query
-      preparedQuery = liberated.jetty.SqliteDbif.__db.prepare(query.join(" "));
+      preparedQuery = db.prepare(query.join(" "));
       try
       {
         // Bind the parameters
         params.forEach(
           function(param, i)
           {
-            preparedQuery.bind(i+1, param.value);
+            preparedQuery.bind(i+1, param);
           });
         
         // Execute the insertion query
@@ -632,6 +652,7 @@ qx.Class.define("liberated.jetty.SqliteDbif",
      */
     putBlob : function(blobData)
     {
+      var             db;
       var             query;
       var             preparedQuery;
       var             key;
@@ -644,8 +665,11 @@ qx.Class.define("liberated.jetty.SqliteDbif",
           "VALUES (?1);"
         ].join(" ");
       
+      // Retrieve this thread's database connection
+      db = liberated.jetty.SqliteDbif.getDB();
+
       // Prepare and issue a query
-      preparedQuery = liberated.jetty.SqliteDbif.__db.prepare(query);
+      preparedQuery = db.prepare(query);
       try
       {
         // Bind the data to the query
@@ -655,7 +679,7 @@ qx.Class.define("liberated.jetty.SqliteDbif",
         preparedQuery.step();
         
         // Retrieve the key value and add it to the entity
-        key = liberated.jetty.SqliteDbif.__db.getLastInsertId();
+        key = db.getLastInsertId();
       }
       finally
       {
@@ -679,6 +703,7 @@ qx.Class.define("liberated.jetty.SqliteDbif",
      */
     getBlob : function(blobId)
     {
+      var             db;
       var             query;
       var             preparedQuery;
       var             blob;
@@ -693,8 +718,11 @@ qx.Class.define("liberated.jetty.SqliteDbif",
           "= ?1;"
         ].join(" ");
       
+      // Retrieve this thread's database connection
+      db = liberated.jetty.SqliteDbif.getDB();
+
       // Prepare and issue a query
-      preparedQuery = liberated.jetty.SqliteDbif.__db.prepare(query);
+      preparedQuery = db.prepare(query);
       try
       {
         // Bind the blob id to the query
@@ -704,7 +732,7 @@ qx.Class.define("liberated.jetty.SqliteDbif",
         preparedQuery.step();
         
         // Retrieve the blob data
-        blob = columnValue(0);
+        blob = preparedQuery.columnValue(0);
       }
       finally
       {
@@ -725,6 +753,7 @@ qx.Class.define("liberated.jetty.SqliteDbif",
      */
     removeBlob : function(blobId)
     {
+      var             db;
       var             query;
       var             preparedQuery;
       var             key;
@@ -734,16 +763,20 @@ qx.Class.define("liberated.jetty.SqliteDbif",
         [
           "DELETE FROM",
           liberated.jetty.SqliteDbif.BLOB_TABLE_NAME,
+          "WHERE",
           liberated.jetty.SqliteDbif.BLOB_FIELD_NAME,
           "= ?1;"
         ].join(" ");
       
+      // Retrieve this thread's database connection
+      db = liberated.jetty.SqliteDbif.getDB();
+
       // Prepare and issue a query
-      preparedQuery = liberated.jetty.SqliteDbif.__db.prepare(query);
+      preparedQuery = db.prepare(query);
       try
       {
         // Bind the data to the query
-        preparedQuery.bind(1, blobData);
+        preparedQuery.bind(1, blobId);
         
         // Execute the insertion query
         preparedQuery.step();
@@ -760,19 +793,22 @@ qx.Class.define("liberated.jetty.SqliteDbif",
      * Begin a transaction.
      *
      * @return {Object}
-     *   A transaction object. It has commit(), rollback(), and isActive() 
-     *   methods.
+     *   A transaction object. It has commit() and rollback() methods.
      */
     beginTransaction : function()
     {
+      var             db;
       var             query;
       var             preparedQuery;
 
-      // Generate the insertion query
+      // Generate the BEGIN TRANSACTION query
       query = "BEGIN;";
       
+      // Retrieve this thread's database connection
+      db = liberated.jetty.SqliteDbif.getDB();
+
       // Prepare and issue a query
-      preparedQuery = liberated.jetty.SqliteDbif.__db.prepare(query);
+      preparedQuery = db.prepare(query);
       try
       {
         // Execute the insertion query
@@ -784,14 +820,10 @@ qx.Class.define("liberated.jetty.SqliteDbif",
         preparedQuery.dispose();
       }
 
-      // A transaction is now in progress
-      liberated.jetty.SqliteDbif.__bTransactionInProgress = true;
-
       return (
         {
-          commit   : this.__commitTransaction,
-          rollback : this.__rollbackTransaction,
-          isActive : this.__isActive
+          commit   : liberated.jetty.SqliteDbif.__commitTransaction,
+          rollback : liberated.jetty.SqliteDbif.__rollbackTransaction
         });
     },
     
@@ -800,14 +832,18 @@ qx.Class.define("liberated.jetty.SqliteDbif",
      */
     __commitTransaction : function()
     {
+      var             db;
       var             query;
       var             preparedQuery;
 
-      // Generate the insertion query
+      // Generate the COMMIT TRANSACTION query
       query = "COMMIT;";
       
+      // Retrieve this thread's database connection
+      db = liberated.jetty.SqliteDbif.getDB();
+
       // Prepare and issue a query
-      preparedQuery = liberated.jetty.SqliteDbif.__db.prepare(query);
+      preparedQuery = db.prepare(query);
       try
       {
         // Execute the insertion query
@@ -818,9 +854,6 @@ qx.Class.define("liberated.jetty.SqliteDbif",
         // Clean up
         preparedQuery.dispose();
       }
-
-      // The transaction is no longer in progress
-      liberated.jetty.SqliteDbif.__bTransactionInProgress = false;
     },
     
     /**
@@ -828,14 +861,18 @@ qx.Class.define("liberated.jetty.SqliteDbif",
      */
     __rollbackTransaction : function()
     {
+      var             db;
       var             query;
       var             preparedQuery;
 
-      // Generate the insertion query
+      // Generate the ROLLBACK TRANSACTION query
       query = "ROLLBACK;";
       
+      // Retrieve this thread's database connection
+      db = liberated.jetty.SqliteDbif.getDB();
+
       // Prepare and issue a query
-      preparedQuery = liberated.jetty.SqliteDbif.__db.prepare(query);
+      preparedQuery = db.prepare(query);
       try
       {
         // Execute the insertion query
@@ -846,22 +883,6 @@ qx.Class.define("liberated.jetty.SqliteDbif",
         // Clean up
         preparedQuery.dispose();
       }
-
-      // The transaction is no longer in progress
-      liberated.jetty.SqliteDbif.__bTransactionInProgress = false;
-    },
-    
-    /**
-     * Determine if there is an open transaction
-     * 
-     * @return {Boolean}
-     *   <i>true</i> if there is a transaction in progress;
-     *   <i>false</i> otherwise
-     */
-    __isActive : function()
-    {
-      // A transaction is now in progress
-      return liberated.jetty.SqliteDbif.__bTransactionInProgress;
     }
   }
 });
