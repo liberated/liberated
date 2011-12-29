@@ -21,6 +21,9 @@ qx.Class.define("liberated.jetty.SqliteDbif",
     BLOB_TABLE_NAME : "__BLOBS__",
 
     /** Field name within the Blob table, which contains blob data */
+    BLOB_KEY_NAME : "blobId",
+
+    /** Field name within the Blob table, which contains blob data */
     BLOB_FIELD_NAME : "data",
 
 
@@ -30,7 +33,7 @@ qx.Class.define("liberated.jetty.SqliteDbif",
      * 
      * @return {Sq4java.SQLiteConnection}
      */
-    getDB : function()
+    __getDB : function()
     {
       var             Sq4java = Packages.com.almworks.sqlite4java;
       var             db;
@@ -86,7 +89,7 @@ qx.Class.define("liberated.jetty.SqliteDbif",
       // Save the database name
       liberated.jetty.SqliteDbif.__databaseName = databaseName;
 
-      // Prepare for one database connection per thread. This is used in getDB()
+      // Prepare for one database connection per thread. Used in __getDB()
       liberated.jetty.SqliteDbif.__dbPerThread = new JavaAdapter(
         java.lang.ThreadLocal, 
         {
@@ -97,7 +100,7 @@ qx.Class.define("liberated.jetty.SqliteDbif",
         });
 
       // Now retrieve this thread's database connection
-      db = liberated.jetty.SqliteDbif.getDB();
+      db = liberated.jetty.SqliteDbif.__getDB();
 
       // For each entity type...
       for (className in entityTypeMap)
@@ -184,6 +187,30 @@ qx.Class.define("liberated.jetty.SqliteDbif",
           preparedQuery.dispose();
         }
       }
+      
+      // Create the Blobs table
+      query = [];
+      query.push("CREATE TABLE IF NOT EXISTS");
+      query.push("\"" + liberated.jetty.SqliteDbif.BLOB_TABLE_NAME + "\"");
+      query.push("(");
+      query.push(liberated.jetty.SqliteDbif.BLOB_KEY_NAME);
+      query.push("INTEGER PRIMARY KEY,");
+      query.push(liberated.jetty.SqliteDbif.BLOB_FIELD_NAME);
+      query.push("BLOB");
+      query.push(");");
+
+      // Prepare and issue a query
+      preparedQuery = db.prepare(query.join(" "));
+      try
+      {
+        // Execute the create table query
+        preparedQuery.step();
+      }
+      finally
+      {
+        // Clean up
+        preparedQuery.dispose();
+      }
     },
 
 
@@ -246,14 +273,18 @@ qx.Class.define("liberated.jetty.SqliteDbif",
       {
       case "Array":
         params = [];
-        query = "SELECT * FROM " + type + " WHERE ";
+        query = "SELECT * FROM " + type;
         keyField.forEach(
           function(fieldName, i)
           {
-            // If this isn't the first field specifier...
-            if (i != 0)
+            // If this is the first field specifier...
+            if (i == 0)
             {
-              // ... then we need a conjugation
+              query += " WHERE ";
+            }
+            else
+            {
+              // Otherwise,  we need a conjunction
               query += " AND ";
             }
             
@@ -277,59 +308,62 @@ qx.Class.define("liberated.jetty.SqliteDbif",
         // Create a new query
         params = [];
         query = [];
-        query.push("SELECT * FROM " + type + " WHERE ");
+        query.push("SELECT * FROM " + type);
 
         // If they're not asking for all objects, build a criteria predicate.
         if (searchCriteria)
         {
-            (function(criterion)
+          query.push(" WHERE ");
+
+          (function(criterion)
+            {
+              var             filterOp;
+              var             callee = arguments.callee;
+
+              switch(criterion.type)
               {
-                var             filterOp;
-                var             callee = arguments.callee;
-
-                switch(criterion.type)
+              case "op":
+                switch(criterion.method)
                 {
-                case "op":
-                  switch(criterion.method)
-                  {
-                  case "and":
-                    // Generate the conditions specified in the children
-                    query.push("(");
-                    criterion.children.forEach(
-                      function(child, i)
+                case "and":
+                  // Generate the conditions specified in the children
+                  query.push("(");
+                  criterion.children.forEach(
+                    function(child, i)
+                    {
+                      if (i != 0)
                       {
-                        if (i != 0)
-                        {
-                          query.push(" AND ");
-                        }
-                        query.push("(");
-                        callee(child);
-                        query.push(")");
-                      });
-                    break;
-
-                  default:
-                    throw new Error("Unrecognized criterion method: " +
-                                    criterion.method);
-                  }
-                  break;
-
-                case "element":
-                  // Map the specified filter operator to the db's filter ops.
-                  filterOp = criterion.filterOp || "=";
-
-                  // Add a filter using the provided parameters
-                  query.push(criterion.field);
-                  query.push(filterOp);
-                  query.push("?" + (params.length + 1));
-                  params.push(criterion.value);
+                        query.push(" AND ");
+                      }
+                      query.push("(");
+                      callee(child);
+                      query.push(")");
+                    });
+                  query.push(")");
                   break;
 
                 default:
-                  throw new Error("Unrceognized criterion type: " +
-                                  criterion.type);
+                  throw new Error("Unrecognized criterion method: " +
+                                  criterion.method);
                 }
-              })(searchCriteria);
+                break;
+
+              case "element":
+                // Map the specified filter operator to the db's filter ops.
+                filterOp = criterion.filterOp || "=";
+
+                // Add a filter using the provided parameters
+                query.push(criterion.field);
+                query.push(filterOp);
+                query.push("?" + (params.length + 1));
+                params.push(criterion.value);
+                break;
+
+              default:
+                throw new Error("Unrceognized criterion type: " +
+                                criterion.type);
+              }
+            })(searchCriteria);
         }
         
         query = query.join("");
@@ -360,8 +394,7 @@ qx.Class.define("liberated.jetty.SqliteDbif",
               case "sort":
                 sort = " ORDER BY ?" + (params.length + 1);
                 params.push(criterion.field);
-                sort += " ?" + (params.length + 1);
-                params.push(criterion.order);
+                sort += criterion.order == "desc" ? "DESC" : "ASC";
                 break;
                 
               default:
@@ -377,7 +410,7 @@ qx.Class.define("liberated.jetty.SqliteDbif",
       }
       
       // Retrieve this thread's database connection
-      db = liberated.jetty.SqliteDbif.getDB();
+      db = liberated.jetty.SqliteDbif.__getDB();
 
       // Prepare and issue a query
       preparedQuery = db.prepare(query);
@@ -413,13 +446,13 @@ qx.Class.define("liberated.jetty.SqliteDbif",
         preparedQuery.dispose();
       }
 
-      // Initialize a map for the result data
-      result = {};
-
       // Process the query results
       dbResults.forEach(
         function(dbResult)
         {
+          // Initialize a map for the result data
+          result = {};
+
           // Pull all of the result properties into the entity data
           for (fieldName in fields)
           {
@@ -536,7 +569,7 @@ qx.Class.define("liberated.jetty.SqliteDbif",
       query.push(");");
 
       // Retrieve this thread's database connection
-      db = liberated.jetty.SqliteDbif.getDB();
+      db = liberated.jetty.SqliteDbif.__getDB();
 
       // Prepare and issue a query
       preparedQuery = db.prepare(query.join(" "));
@@ -614,7 +647,7 @@ qx.Class.define("liberated.jetty.SqliteDbif",
       }
 
       // Retrieve this thread's database connection
-      db = liberated.jetty.SqliteDbif.getDB();
+      db = liberated.jetty.SqliteDbif.__getDB();
 
       // Prepare and issue a query
       preparedQuery = db.prepare(query.join(" "));
@@ -666,7 +699,7 @@ qx.Class.define("liberated.jetty.SqliteDbif",
         ].join(" ");
       
       // Retrieve this thread's database connection
-      db = liberated.jetty.SqliteDbif.getDB();
+      db = liberated.jetty.SqliteDbif.__getDB();
 
       // Prepare and issue a query
       preparedQuery = db.prepare(query);
@@ -711,15 +744,17 @@ qx.Class.define("liberated.jetty.SqliteDbif",
       // Generate the insertion query
       query =
         [
-          "SELECT * FROM",
+          "SELECT",
+          liberated.jetty.SqliteDbif.BLOB_FIELD_NAME,
+          "FROM",
           liberated.jetty.SqliteDbif.BLOB_TABLE_NAME,
           "WHERE",
-          liberated.jetty.SqliteDbif.BLOB_FIELD_NAME,
+          liberated.jetty.SqliteDbif.BLOB_KEY_NAME,
           "= ?1;"
         ].join(" ");
       
       // Retrieve this thread's database connection
-      db = liberated.jetty.SqliteDbif.getDB();
+      db = liberated.jetty.SqliteDbif.__getDB();
 
       // Prepare and issue a query
       preparedQuery = db.prepare(query);
@@ -769,7 +804,7 @@ qx.Class.define("liberated.jetty.SqliteDbif",
         ].join(" ");
       
       // Retrieve this thread's database connection
-      db = liberated.jetty.SqliteDbif.getDB();
+      db = liberated.jetty.SqliteDbif.__getDB();
 
       // Prepare and issue a query
       preparedQuery = db.prepare(query);
@@ -805,7 +840,7 @@ qx.Class.define("liberated.jetty.SqliteDbif",
       query = "BEGIN;";
       
       // Retrieve this thread's database connection
-      db = liberated.jetty.SqliteDbif.getDB();
+      db = liberated.jetty.SqliteDbif.__getDB();
 
       // Prepare and issue a query
       preparedQuery = db.prepare(query);
@@ -840,7 +875,7 @@ qx.Class.define("liberated.jetty.SqliteDbif",
       query = "COMMIT;";
       
       // Retrieve this thread's database connection
-      db = liberated.jetty.SqliteDbif.getDB();
+      db = liberated.jetty.SqliteDbif.__getDB();
 
       // Prepare and issue a query
       preparedQuery = db.prepare(query);
@@ -869,7 +904,7 @@ qx.Class.define("liberated.jetty.SqliteDbif",
       query = "ROLLBACK;";
       
       // Retrieve this thread's database connection
-      db = liberated.jetty.SqliteDbif.getDB();
+      db = liberated.jetty.SqliteDbif.__getDB();
 
       // Prepare and issue a query
       preparedQuery = db.prepare(query);
