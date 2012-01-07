@@ -682,7 +682,7 @@ qx.Class.define("liberated.dbif.Entity",
       }
 
       // Retry a number of times if commit fails
-      for (i = 0; i < liberated.dbif.Entity.MAX_COMMIT_TRIES; i++)
+      for (i = liberated.dbif.Entity.MAX_COMMIT_TRIES; i > 0; i--)
       {
         // Start a transaction
         transaction = liberated.dbif.Entity.__beginTransaction();
@@ -705,12 +705,15 @@ qx.Class.define("liberated.dbif.Entity",
           {
             console.log("Database Write error: " + e);
           }
-          
+
           // Roll back the transaction
           transaction.rollback();
           
-          // Throw a new error for the user to handle
-          throw new Error("Database write error: " + e);
+          if (i == 1)
+          {
+            // Throw a new error for the user to handle
+            throw new Error("Database write error: " + e);
+          }
         }
       }
       
