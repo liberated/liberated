@@ -14,11 +14,25 @@ qx.Class.define("liberated.sim.Dbif",
 
   statics :
   {
+    /**
+     * The destination backend. This is used to provide warnings about
+     * operations that would succeed here but likely fail on the destination
+     * backend.
+     */
+    Destination : "App Engine",
+
     /** The default database. See {@link setDb}. */
     Database : null,
     
     /** The database map entry to use for blobs */
     BlobStorage : "**BLOB**",
+
+    /**
+     * Whether a transaction is in progress. We can use this to warn about
+     * potentially dangerous practices, such as blob writes in a transaction
+     * which fail in App Engine.
+     */
+    __bTransactionActive : false,
 
     /** 
      * The next value to use for an auto-generated key for an entity
@@ -556,6 +570,15 @@ qx.Class.define("liberated.sim.Dbif",
       var             Db = liberated.sim.Dbif.Database;
       var             key;
 
+      // Do not allow putBlob during transaction
+      if (liberated.sim.Dbif.__bTransactionActive &&
+          liberated.sim.Dbif.Destination == "App Engine")
+      {
+        throw new Error(
+          "putBlob() in transaction fails on App Engine. " +
+          "Place blob writes outside transaction.");
+      }
+
       // If there's no blob storage yet...
       if (! Db[blobStorage])
       {
@@ -614,6 +637,15 @@ qx.Class.define("liberated.sim.Dbif",
       var             blobStorage = liberated.sim.Dbif.BlobStorage;
       var             Db = liberated.sim.Dbif.Database;
 
+      // Do not allow removeBlob during transaction
+      if (liberated.sim.Dbif.__bTransactionActive &&
+          liberated.sim.Dbif.Destination == "App Engine")
+      {
+        throw new Error(
+          "removeBlob() in transaction fails on App Engine. " +
+          "Place blob writes outside transaction.");
+      }
+
       // Is there any blob storage?
       if (! Db[blobStorage])
       {
@@ -633,7 +665,6 @@ qx.Class.define("liberated.sim.Dbif",
      */
     beginTransaction : function()
     {
-      var             bIsActive = true;
       var             log =
         (typeof console != "undefined" && console.log 
          ? console.log 
@@ -641,19 +672,20 @@ qx.Class.define("liberated.sim.Dbif",
         );
 
       log("Simulating BEGIN");
+      liberated.sim.Dbif.__bTransactionActive = true;
 
       return (
         {
           commit : function()
           {
             log("Simulating COMMIT");
-            bIsActive = false;
+            liberated.sim.Dbif.__bTransactionActive = false;
           },
           
           rollback : function()
           {
             log("Simulating ROLLBACK");
-            bIsActive = false;
+            liberated.sim.Dbif.__bTransactionActive = false;
           }
         });
     }
