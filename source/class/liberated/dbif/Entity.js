@@ -221,9 +221,6 @@ qx.Class.define("liberated.dbif.Entity",
   
   statics :
   {
-    /** Transaction identifier */
-    __transaction : null,
-
     /** Maximum number of times to try a transaction before failing */
     MAX_COMMIT_TRIES : 5,
 
@@ -659,7 +656,7 @@ qx.Class.define("liberated.dbif.Entity",
     asTransaction : function(func, args, context)
     {
       var             i;
-      var             transaction = liberated.dbif.Entity.__transaction;
+      var             transaction;
       var             result;
       
       // If no arguments were provided...
