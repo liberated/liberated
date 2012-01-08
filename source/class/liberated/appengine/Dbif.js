@@ -25,6 +25,38 @@ qx.Class.define("liberated.appengine.Dbif",
      */
     __keyRoot : null,
 
+
+    /**
+     * Decode a key, showing its and its ancestors' name or id
+     * 
+     * @param key {Packages.com.google.appengine.api.datastore.Key}
+     * 
+     * @return {String}
+     *   The decoded string
+     */
+    _decodeKey : function(key)
+    {
+      var decoded = [];
+
+      (function(key)
+       {
+         var             name = key.getName() || key.getId();
+         var             parent = key.getParent();
+
+         // Add this element's kind and name
+         decoded.unshift(key.getKind() + ":" + name);
+         
+         // If this is not the top-level entity...
+         if (parent)
+         {
+           // ... then call ourself recursively with our parent entity
+           arguments.callee(parent);
+         }
+       })(key);
+      
+      return decoded.join(", ");
+    },
+
     /*
      * Build a composite key.
      *
