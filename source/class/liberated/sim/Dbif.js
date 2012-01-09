@@ -672,6 +672,14 @@ qx.Class.define("liberated.sim.Dbif",
         );
 
       log("Simulating BEGIN");
+
+      // Ensure that this isn't a recursive transaction
+      if (liberated.sim.Dbif.__bTransactionActive)
+      {
+        throw new Error("Recursive transactions are not supported");
+      }
+
+      // Note that there's a transaction in progress
       liberated.sim.Dbif.__bTransactionActive = true;
 
       return (
