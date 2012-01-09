@@ -91,7 +91,6 @@ qx.Class.define("liberated.rpc.Server",
       var             requests;   // the parsed input request
       var             error;      // an error object
       var             reply;      // a textual reply in case garbage input
-      var             protocol;   // protocol version being used
       var             fqMethod;   // fully-qualified method name
       var             service;    // service function to call
       var             result;     // result of calling service function
@@ -99,9 +98,6 @@ qx.Class.define("liberated.rpc.Server",
       var             run;        // function to run the service call
       var             responses;  // array of responses (in case of batch)
       
-      // Assume protocol is 2.0 until we (might) discover otherwise
-      protocol = "2.0";
-
       try
       {
         // Parse the JSON
@@ -110,7 +106,7 @@ qx.Class.define("liberated.rpc.Server",
       catch(e)
       {
         // We couldn't parse the request.
-        // Get a new version 2.0 error object.
+        // Get a new error object.
         error = new liberated.rpc.error.Error("2.0");
         error.setCode(qx.io.remote.RpcError.v2.error.ParseError);
         error.setMessage("Could not parse request");
@@ -135,7 +131,7 @@ qx.Class.define("liberated.rpc.Server",
         // Ensure that there's at least one element in the array
         if (requests.length === 0)
         {
-          // Get a new version 2.0 error object.
+          // Get a new error object.
           error = new liberated.rpc.error.Error("2.0");
           error.setCode(qx.io.remote.RpcError.v2.error.InvalidRequest);
           error.setMessage("Empty batch array");
@@ -161,7 +157,7 @@ qx.Class.define("liberated.rpc.Server",
       }
       else
       {
-        // Get a new version 2.0 error object.
+        // Get a new error object.
         error = new liberated.rpc.error.Error("2.0");
         error.setCode(qx.io.remote.RpcError.v2.error.InvalidRequest);
         error.setMessage("Unrecognized request type");
@@ -191,7 +187,7 @@ qx.Class.define("liberated.rpc.Server",
           // Ensure that this is a valid request object
           if (! qx.lang.Type.isObject(request))
           {
-            // Get a new version 2.0 error object.
+            // Get a new error object.
             error = new liberated.rpc.error.Error("2.0");
             error.setCode(qx.io.remote.RpcError.v2.error.InvalidRequest);
             error.setMessage("Unrecognized request");
@@ -208,15 +204,13 @@ qx.Class.define("liberated.rpc.Server",
             return ret;
           }
 
-          // Determine which protocol to use. Is there a jsonrpc member?
+          // Validate parameters
           if (typeof(request.jsonrpc) == "string")
           {
-            // Get a new version 2.0 error object.
-            error = new liberated.rpc.error.Error("2.0");
-
             // Yup. It had better be "2.0"!
             if (request.jsonrpc != "2.0")
             {
+              error = new liberated.rpc.error.Error("2.0");
               error.setCode(qx.io.remote.RpcError.v2.error.InvalidRequest);
               error.setMessage("'jsonrpc' member must be \"2.0\".");
               error.setData("Found value " + request.jsonrpc + "in 'jsonrpc'.");
@@ -235,6 +229,7 @@ qx.Class.define("liberated.rpc.Server",
             // Validate that the method is a string
             if (! qx.lang.Type.isString(request.method))
             {
+              error = new liberated.rpc.error.Error("2.0");
               error.setCode(qx.io.remote.RpcError.v2.error.InvalidRequest);
               error.setMessage("JSON-RPC method name is missing or " +
                                "incorrect type");
@@ -257,6 +252,7 @@ qx.Class.define("liberated.rpc.Server",
                 ! qx.lang.Type.isObject(request.params) &&
                 ! qx.lang.Type.isArray(request.params))
             {
+              error = new liberated.rpc.error.Error("2.0");
               error.setCode(qx.io.remote.RpcError.v2.error.InvalidRequest);
               error.setMessage("JSON-RPC params is missing or incorrect type");
               error.setData(
@@ -272,13 +268,10 @@ qx.Class.define("liberated.rpc.Server",
 
               return ret;
             }
-
-            // We have what appears to be a valid version 2.0 request
-            protocol = "2.0";
           }
-          else if (bBatch)
+          else
           {
-            // We're in batch mode so we had to have been in 2.0 mode
+            error = new liberated.rpc.error.Error("2.0");
             error.setCode(qx.io.remote.RpcError.v2.error.InvalidRequest);
             error.setMessage("JSON-RPC protocol version is missing.");
             error.setData("Expected 'jsonrpc:\"2.0\"'");
@@ -293,38 +286,9 @@ qx.Class.define("liberated.rpc.Server",
 
             return ret;
           }
-          else
-          {
-            protocol = "qx1";
-
-            // Get a qooxdoo-modified version 1 error object
-            error = new liberated.rpc.error.Error("qx1");
-
-            // Ensure all of the required members are present in the request
-            if (! qx.lang.Type.isString(request.service) ||
-                ! qx.lang.Type.isString(request.method) ||
-                ! qx.lang.Type.isArray(request.params))
-            {
-              // Invalid. We still send back a 2.0 error object, however.
-              error.setCode(qx.io.remote.RpcError.qx1.error.server.Unknown);
-              error.setMessage("Missing service, method, or params");
-
-              // Build the error response
-              ret = 
-                {
-                  id      : id,
-                  error   : qx.lang.Json.parse(error.stringify())
-                };
-
-              return ret;
-            }
-          }
 
           // Generate the fully-qualified method name
-          fqMethod =
-            (protocol == "qx1"
-             ? request.service + "." + request.method
-             : request.method);
+          fqMethod = request.method;
 
           /*
            * Ensure the requested method name is kosher.  It should be:
@@ -342,25 +306,17 @@ qx.Class.define("liberated.rpc.Server",
           if (! /^[a-zA-Z][_.a-zA-Z0-9]*$/.test(fqMethod))
           {
             // There's some illegal character in the service or method name
-            error.setCode(
-              {
-                "qx1" : qx.io.remote.RpcError.qx1.error.server.MethodNotFound,
-                "2.0" : qx.io.remote.RpcError.v2.error.MethodNotFound
-              }[protocol]);
+            error = new liberated.rpc.error.Error("2.0");
+            error.setCode(qx.io.remote.RpcError.v2.error.MethodNotFound);
             error.setMessage("Illegal character found in service name.");
 
             // Build the error response
             ret = 
               {
+                jsonrpc : "2.0",
                 id      : id,
                 error   : qx.lang.Json.parse(error.stringify())
               };
-
-            // If this is v2, we need to add the indicator of such.
-            if (protocol == "2.0")
-            {
-              ret.jsonrpc = "2.0";
-            }
 
             return ret;
           }
@@ -368,33 +324,25 @@ qx.Class.define("liberated.rpc.Server",
           // Next, ensure there are no double dots
           if (fqMethod.indexOf("..") != -1)
           {
-            error.setCode(
-              {
-                "qx1" : qx.io.remote.RpcError.qx1.error.server.MethodNotFound,
-                "2.0" : qx.io.remote.RpcError.v2.error.MethodNotFound
-              }[protocol]);
+            error = new liberated.rpc.error.Error("2.0");
+            error.setCode(qx.io.remote.RpcError.v2.error.MethodNotFound);
             error.setMessage("Illegal use of two consecutive dots " +
                              "in service name.");
 
             // Build the error response
             ret = 
               {
+                jsonrpc : "2.0",
                 id      : id,
                 error   : qx.lang.Json.parse(error.stringify())
               };
-
-            // If this is v2, we need to add the indicator of such.
-            if (protocol == "2.0")
-            {
-              ret.jsonrpc = "2.0";
-            }
 
             return ret;
           }
 
           // Use the registered callback to get a service function associated
           // with this method name.
-          service = this.getServiceFactory()(fqMethod, protocol, error);
+          service = this.getServiceFactory()(fqMethod, "2.0", error);
 
           // Was there an error?
           if (service == null)
@@ -409,15 +357,10 @@ qx.Class.define("liberated.rpc.Server",
             // Build error response. The error was set in the service factory.
             ret = 
               {
-                id    : request.id,
-                error : qx.lang.Json.parse(error.stringify())
+                jsonrpc : "2.0",
+                id      : request.id,
+                error   : qx.lang.Json.parse(error.stringify())
               };
-            
-            // If this is v2, we need to add the indicator of such.
-            if (protocol == "2.0")
-            {
-              ret.jsonrpc = "2.0";
-            }
 
             return ret;
           }
@@ -489,14 +432,6 @@ qx.Class.define("liberated.rpc.Server",
               var             params = qx.lang.Array.clone(parameters);
               var             timer = {}; // just a reference to compare to
 
-              // Assume that any error that occurs here on out will be of
-              // Application origin. Only JavaScript errors in the script will
-              // return to being Server origin.
-              if (protocol == "qx1")
-              {
-                error.setOrigin(qx.io.remote.RpcError.qx1.origin.Application);
-              }
-
               // Provide the error object as the last parameter.
               params.push(error); 
 
@@ -509,20 +444,11 @@ qx.Class.define("liberated.rpc.Server",
               {
                 // The service method threw an error. Create our own error from
                 // it.
-                error.setCode(
-                  {
-                    "qx1" : qx.io.remote.RpcError.qx1.error.server.ScriptError,
-                    "2.0" : qx.io.remote.RpcError.v2.error.InternalError
-                  }[protocol]);
+                error = new liberated.rpc.error.Error("2.0");
+                error.setCode(qx.io.remote.RpcError.v2.error.InternalError);
 
                 // Combine the message from the original error
                 error.setMessage("Method threw an error: " + e);
-
-                // This is classified as a server error, not application-origin.
-                if (protocol == "qx1")
-                {
-                  error.setOrigin(qx.io.remote.RpcError.qx1.origin.Server);
-                }
 
                 // Use this error as the result
                 result = error;
@@ -571,15 +497,10 @@ qx.Class.define("liberated.rpc.Server",
             // Build the error response
             ret = 
               {
-                id    : request.id,
-                error : qx.lang.Json.parse(result.stringify())
+                jsonrpc : "2.0",
+                id      : request.id,
+                error   : qx.lang.Json.parse(result.stringify())
               };
-            
-            // If this is v2, we need to add the indicator of such.
-            if (protocol == "2.0")
-            {
-              ret.jsonrpc = "2.0";
-            }
 
             return ret;
           }
@@ -587,15 +508,10 @@ qx.Class.define("liberated.rpc.Server",
           // We have a standard result. Stringify and return a proper response.
           ret = 
             {
-              id     : request.id,
-              result : result
+              jsonrpc : "2.0",
+              id      : request.id,
+              result  : result
             };
-
-          // If this is v2, we need to add the indicator of such.
-          if (protocol == "2.0")
-          {
-            ret.jsonrpc = "2.0";
-          }
 
           return ret;
         },

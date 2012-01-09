@@ -28,39 +28,25 @@ qx.Class.define("liberated.rpc.error.Error",
     this.base(arguments);
     
     // Save the protocol id
-    this.setProtocol(protocolId);
+    this.setProtocol(protocolId || "2.0");
   },
 
   properties :
   {
     /**
-     * The version of the JSON-RPC protocol to use.  If null, the protocol is
-     * auto-identified from the request. Otherwise, the strings "qx1"
-     * (qooxdoo's modified Version 1) and "2.0" are currently allowed.
-     *
-     * @note
-     *   At this time, only qooxdoo's modified version 1 ("qx1") is supported.
+     * The version of the JSON-RPC protocol to use.  The default is the latest
+     * version of the protocol, currently "2.0".
      */
     protocol :
     {
-      init     : "qx1",
+      init     : "2.0",
       nullable : false,         // server knows the protocol by now.
       check    : function(protocolId)
       {
-        return [ "qx1", "2.0" ].indexOf(protocolId) != -1;
+        return [ "2.0" ].indexOf(protocolId) != -1;
       }
     },
 
-    /**
-     * The origin of the error. Its value must be one of the values of
-     * qx.io.remote.RpcError.qx1.origin. This is used only for protocol "qx1"
-     */
-    origin :
-    {
-      check   : "Integer",
-      init    : qx.io.remote.RpcError.qx1.origin.Server
-    },
-    
     /**
      * The error code. If the origin is Server, then this value must be one of
      * the values of qx.io.remote.RpcError.qx1.error.server.*
@@ -68,7 +54,7 @@ qx.Class.define("liberated.rpc.error.Error",
     code :
     {
       check   : "Integer",
-      init    : qx.io.remote.RpcError.qx1.error.server.Unknown
+      init    : qx.io.remote.RpcError.v2.error.InvalidRequest
     },
     
     /**
@@ -113,15 +99,12 @@ qx.Class.define("liberated.rpc.error.Error",
         if (data !== null)
         {
           // There is, so return it.
-          error.data = this.getData();
+          error.data = data;
         }
         break;
         
-      case "qx1":
-        error.origin = this.getOrigin();
-        error.code = this.getCode();
-        error.message = this.getMessage();
-        break;
+      default:
+        throw new Error("Unrecognized RPC Error protocol version");
       }
       
       // Format the error object into a JSON response
