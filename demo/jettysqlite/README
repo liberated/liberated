@@ -1,0 +1,26 @@
+This is a demo of a Jetty web server, and a remote procedure call server
+talking to an SQLite database. Source files for the demo are in the directory
+source/class/jettysqlite. The database entity used here is a Counter,
+ObjCounter.js. That entity type is manipulated with a remote procedure call,
+countPlusOne, defined in MCounter.js.
+
+Build the application with "./generate.py source". Run it with "./server.sh"
+
+This server accepts JSON-RPC requests as either GET or POST requests. The
+only defined method is qooxdoo.test.countPlusOne. It takes a single parameter,
+which is the name of the counter to be incremented.
+
+You can test the application, incrementing the counter "x", with the
+following URL:
+
+http://localhost:3000/rpc?{"jsonrpc":"2.0","method":"qooxdoo.test.countPlusOne","params":["x"]}
+
+or, if your browser is picky about what characters are used in a URL,
+
+http://localhost:3000/rpc?{%22jsonrpc%22:%222.0%22,%20%22method%22:%22qooxdoo.test.countPlusOne%22,%20%22params%22:[%20%22x%22]}
+
+The database which is used is /tmp/jettysqlite.db. It can be queried using the
+sqlite3 application. The easiest way to view the counter values is with the
+single command:
+
+  echo 'SELECT * FROM counter;' | sqlite3 /tmp/jettysqlite.db 
