@@ -28,6 +28,7 @@ qx.Class.define("liberated.demo.RemoteDataModel",
     // Get an RPC object on which we'll do all of our communication
     var clazz = liberated.demo.RemoteDataModel;
     this.rpc = new qx.io.remote.Rpc(clazz.URL, clazz.SERVICE);
+    this.rpc.setProtocol("2.0");
     this.rpc.setTimeout(10000);
     this.rpc.setCrossDomain(false);
   },

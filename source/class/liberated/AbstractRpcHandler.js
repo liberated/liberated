@@ -104,7 +104,7 @@ qx.Class.define("liberated.AbstractRpcHandler",
      *   The fully-qualified name of the method to be called.
      * 
      * @param protocol {String}
-     *   The JSON-RPC protocol being used ("qx1", "2.0")
+     *   The JSON-RPC protocol being used ("2.0")
      * 
      * @param error {liberated.rpc.error.Error}
      *   An error object to be set if an error is encountered in 
@@ -134,11 +134,7 @@ qx.Class.define("liberated.AbstractRpcHandler",
       if (! method)
       {
         // No such method.
-        error.setCode(
-          {
-            "qx1" : qx.io.remote.RpcError.qx1.error.server.MethodNotFound,
-            "2.0" : qx.io.remote.RpcError.v2.error.MethodNotFound
-          }[protocol]);
+        error.setCode(qx.io.remote.RpcError.v2.error.MethodNotFound);
         error.setMessage("No such method");
         return null;
       }
@@ -148,11 +144,7 @@ qx.Class.define("liberated.AbstractRpcHandler",
           !liberated.AbstractRpcHandler.authorizationFunction(fqMethodName))
       {
         // Permission denied
-        error.setCode(
-          {
-            "qx1" : qx.io.remote.RpcError.qx1.error.server.PermissionDenied,
-            "2.0" : qx.io.remote.RpcError.v2.error.PermissionDenied
-          }[protocol]);
+        error.setCode(qx.io.remote.RpcError.v2.error.PermissionDenied);
         error.setMessage("Permission denied.");
         return null;
       }

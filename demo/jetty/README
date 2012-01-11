@@ -1,12 +1,12 @@
-Create build/script/qxlib-noopt.js with "generate.py qxlib-noopt" in this
-directory.
+1. Create build/script/qxlib-noopt.js with "generate.py qxlib-noopt" in this
+   directory.
 
-Create build/index.html and build/script/rpcexample.js with "generate.py
-build" in this directory, and copy its build/index.html and
-build/script/liberated.demo.js to here.
+2. Create build/index.html and build/script/rpcexample.js with "generate.py
+   build" in this directory, and copy its build/index.html and
+   build/script/liberated.demo.js to here.
 
-Run ./server.sh
+3. Run ./server.sh
 
-Connect via the browser to http://localhost:3000
+4. Connect via the browser to http://localhost:3000
 
-In the URL box, enter: http://localhost:3000/rpc
+5. Open the browser's debug console to watch RPC traffic

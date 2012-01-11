@@ -91,7 +91,7 @@ qx.Class.define("jetty.Services",
                     this.isArray,
                     [ "val" ]);
 
-    registerService(".isObject",
+    registerService("isObject",
                     this.isObject,
                     [ "val" ]);
 
@@ -102,6 +102,10 @@ qx.Class.define("jetty.Services",
     registerService("getParam",
                     this.getParam,
                     [ "val" ]);
+
+    registerService("getParams",
+                    this.getParams,
+                    [ ]);
 
     registerService("getCurrentTimestamp",
                     this.getCurrentTimestamp,
@@ -221,12 +225,6 @@ qx.Class.define("jetty.Services",
       return qx.lang.Array.fromArguments(arguments);
     },
 
-    // Return the first parameter
-    getParam : function(val)
-    {
-      return val;
-    },
-
     // Get the current time, in both seconds since epoch and map formats
     getCurrentTimestamp : function()
     {
@@ -251,7 +249,7 @@ qx.Class.define("jetty.Services",
     // Return an RPC error
     getError : function()
     {
-      var error = new liberated.rpc.error.Error("qx1");
+      var error = new liberated.rpc.error.Error("2.0");
       error.setCode(23);
       error.setMessage("This is an application-provided error");
       return error;

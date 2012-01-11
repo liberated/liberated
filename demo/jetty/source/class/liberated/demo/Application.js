@@ -12,6 +12,11 @@
  *   Derrell Lipman (derrell)
  *
  */
+
+/*
+#use(liberated.rpc.error.Error)
+ */
+
 qx.Class.define("liberated.demo.Application",
 {
   extend : qx.application.Standalone,
@@ -20,7 +25,7 @@ qx.Class.define("liberated.demo.Application",
   {
     url :
     {
-      init : "/services",
+      init  : null,
       event : "changeUrl"
     }
   },
@@ -60,13 +65,9 @@ qx.Class.define("liberated.demo.Application",
             name : "RPC Server Functionality (sync)",
             func : this.rpcServerFunctionalitySync,
             desc : ("This test calls a whole set of functions to test " +
-                    "each of the primitive data types. " +
-                    "<span style='color:blue;'>Results are " +
-                    "displayed in the debug console.</span>  The comparison " +
-                    "results should all end with ': true', and the " +
-                    "last test generates an Application Error (#1000).  " +
-                    "No other test generates that error, so receiving " +
-                    "it means the complete set of tests was run." +
+                    "each of the primitive data types." +
+                    "<p>" +
+                    "Enable the browser console to watch traffic." +
                     "<p>" +
                     "These functions all use the synchronous interface. " +
                     "You should not use the synchronous interface " +
@@ -80,20 +81,10 @@ qx.Class.define("liberated.demo.Application",
             name : "RPC Server Functionality (async)",
             func : this.rpcServerFunctionalityAsync,
             desc : ("This test calls a whole set of functions to test " +
-                    "each of the primitive data types.  " +
-                    "<span style='color:blue;'>Results are " +
-                    "displayed in the debug console.</span>  The comparison " +
-                    "results should all end with ': true', and the " +
-                    "last test generates an Application Error (#1000).  " +
-                    "No other test generates that error, so receiving " +
-                    "it means the complete set of tests was run." +
+                    "each of the primitive data types. " +
+                    "These functions all use the asynchronous interface." +
                     "<p>" +
-                    "These functions all use the synchronous interface. " +
-                    "You should not use the synchronous interface " +
-                    "because with some browsers, the entire browser " +
-                    "environment locks up during a synchronous call.  " +
-                    "If the server hangs for a minute or two, so will " +
-                    "the browser!  You have been warned.")
+                    "Enable the browser console to watch traffic.")
           }
         ];
 
@@ -142,11 +133,12 @@ qx.Class.define("liberated.demo.Application",
       page.add(crossDomain);
 
       page.add(new qx.ui.basic.Label("URL:"));
-      var defaultURL = qx.io.remote.Rpc.makeServerURL();
-      if (defaultURL == null)
-      {
-        defaultURL = qx.core.Environment.get("liberated.demo.URL");
-      }
+      var defaultURL =
+        this.getUrl() ||
+        qx.io.remote.Rpc.makeServerURL() ||
+        qx.core.Environment.get("liberated.demo.URL") ||
+        "http://localhost:3000/rpc";
+      this.setUrl(defaultURL);
       var url = new qx.ui.form.TextField(defaultURL);
 
       // If the global URL changes, reset our text field
@@ -163,7 +155,7 @@ qx.Class.define("liberated.demo.Application",
                         this.setUrl(url.getValue());
                       },
                       this);
-
+      
       page.add(url);
 
       page.add(new qx.ui.basic.Label("Service:"));
@@ -195,6 +187,7 @@ qx.Class.define("liberated.demo.Application",
 
       // We'll be setting url and service upon execute; no need to do it now.
       var rpc = new qx.io.remote.Rpc();
+      rpc.setProtocol("2.0");
       rpc.setTimeout(10000);
       var mycall = null;
 
@@ -238,10 +231,12 @@ qx.Class.define("liberated.demo.Application",
     rpcServerFunctionalitySync : function(page, description)
     {
       page.add(new qx.ui.basic.Label("URL:"));
-      var defaultURL = qx.io.remote.Rpc.makeServerURL();
-      if (defaultURL == null) {
-        defaultURL = qx.core.Environment.get("liberated.demo.URL");
-      }
+      var defaultURL =
+        this.getUrl() ||
+        qx.io.remote.Rpc.makeServerURL() ||
+        qx.core.Environment.get("liberated.demo.URL") ||
+        "http://localhost:3000/rpc";
+      this.setUrl(defaultURL);
       var url = new qx.ui.form.TextField(defaultURL);
 
       // If the global URL changes, reset our text field
@@ -299,6 +294,7 @@ qx.Class.define("liberated.demo.Application",
           textArea.setValue(null);
 
           var rpc = new qx.io.remote.Rpc(url.getValue(), service.getValue());
+          rpc.setProtocol("2.0");
           rpc.setTimeout(10000);
 
           test = "getCurrentTimestamp";
@@ -437,21 +433,6 @@ qx.Class.define("liberated.demo.Application",
           textArea.append("result: {" + result.toString() + "}");
           textArea.append("Returns a boolean: " + result);
 
-/*
-          Date.prototype.classname = "Date";
-          var date = new Date();
-          test = "getParam";
-          textArea.append("Calling '" + test + "'");
-          result = rpc.callSync(test, date);
-          textArea.append("result: {" + result + "}");
-          textArea.append("Returns a date object, got " +
-                    (result.classname == date.classname));
-          textArea.append("Returns matching time " +
-                    date.getTime() + " = " +
-                    result.getTime() + " :" +
-                    (result.getTime() == date.getTime()));
-*/
-
           dataArray = new Array();
           dataArray[0] = true;
           dataArray[1] = false;
@@ -483,13 +464,6 @@ qx.Class.define("liberated.demo.Application",
                       typeof(dataArray[i]) + "': " +
                       (typeof(result[i]) == typeof(dataArray[i])));
           };
-
-          test = "getError";
-          textArea.append("Calling '" + test + "'");
-          result = rpc.callSync(test);
-          // should never get here; we should receive an exception
-          textArea.append("ERROR: Should have received an exception!  Got: " + result);
-
         }
         catch (ex)
         {
@@ -504,10 +478,12 @@ qx.Class.define("liberated.demo.Application",
       page.add(crossDomain);
 
       page.add(new qx.ui.basic.Label("URL:"));
-      var defaultURL = qx.io.remote.Rpc.makeServerURL();
-      if (defaultURL == null) {
-        defaultURL = qx.core.Environment.get("liberated.demo.URL");
-      }
+      var defaultURL =
+        this.getUrl() ||
+        qx.io.remote.Rpc.makeServerURL() ||
+        qx.core.Environment.get("liberated.demo.URL") ||
+        "http://localhost:3000/rpc";
+      this.setUrl(defaultURL);
       var url = new qx.ui.form.TextField(defaultURL);
 
       // If the global URL changes, reset our text field
@@ -861,29 +837,6 @@ qx.Class.define("liberated.demo.Application",
             [
               function()
               {
-                Date.prototype.classname = "Date";
-                date = new Date();
-                test = "getParam";
-                page.warn("Calling '" + test + "'");
-                mycall = rpc.callAsync(handler, test, date);
-              }
-
-/*
-              function(result)
-              {
-                page.warn("result: {" + result + "}");
-                page.warn("Returns a date object, got " +
-                          (result.classname == date.classname));
-                page.warn("Returns matching time " + date.getTime() + " = " +
-                          result.getTime() + " :" +
-                          (result.getTime() == date.getTime()));
-              }
-*/
-            ],
-
-            [
-              function()
-              {
                 dataArray = new Array();
                 dataArray[0] = true;
                 dataArray[1] = false;
@@ -921,39 +874,6 @@ qx.Class.define("liberated.demo.Application",
                             (typeof(result[i]) == typeof(dataArray[i])));
                 };
               }
-            ],
-
-            [
-              function()
-              {
-                test = "getError";
-                page.warn("Calling '" + test + " (method 1)'");
-                mycall = rpc.callAsync(handler, test);
-              },
-
-              function(result)
-              {
-                // should never get here; we should receive an exception
-                page.warn("ERROR: Should have received an exception!  " +
-                          "Got: " + result);
-              }
-            ],
-
-            [
-              function()
-              {
-                test = "getError";
-                page.warn("Calling '" + test +
-                          " (method 2 -- only differs with PHP backend)'");
-                mycall = rpc.callAsync(handler, test, true);
-              },
-
-              function(result)
-              {
-                // should never get here; we should receive an exception
-                page.warn("ERROR: Should have received an exception!  " +
-                          "Got: " + result);
-              }
             ]
           ];
 
@@ -984,6 +904,7 @@ qx.Class.define("liberated.demo.Application",
 
         // Determine which transport to use
         var rpc = new qx.io.remote.Rpc(url.getValue(), service.getValue());
+        rpc.setProtocol("2.0");
         rpc.setTimeout(10000);
         rpc.setCrossDomain(crossDomain.getValue());
 

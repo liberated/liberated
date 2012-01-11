@@ -342,6 +342,7 @@ qx.Class.define("liberated.rpc.Server",
 
           // Use the registered callback to get a service function associated
           // with this method name.
+          error = new liberated.rpc.error.Error("2.0");
           service = this.getServiceFactory()(fqMethod, "2.0", error);
 
           // Was there an error?

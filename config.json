@@ -29,7 +29,7 @@
   {
     "APPLICATION"  : "liberated",
     "APPLICATION_MAIN_CLASS" : "${APPLICATION}.demo.Demo",
-    "QOOXDOO_PATH" : "../../qooxdoo/1.4",
+    "QOOXDOO_PATH" : "../qooxdoo",
     //"QXTHEME"      : "liberated.theme.modern.Theme",
     "QXTHEME"      : "qx.theme.Modern",
     "API_EXCLUDE"  : ["qx.test.*", "liberated.demo.*", "${APPLICATION}.theme.*", "${APPLICATION}.test.*"],
