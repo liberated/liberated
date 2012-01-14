@@ -27,91 +27,91 @@ qx.Class.define("jetty.Services",
     //
     // Register each of our functions
     //
-    registerService("echo",
+    registerService("qooxdoo.test.echo",
                     this.echo,
                     [ ]);
 
-    registerService("getInteger",
+    registerService("qooxdoo.test.getInteger",
                     this.getInteger,
                     [ ]);
 
-    registerService("getFloat",
+    registerService("qooxdoo.test.getFloat",
                     this.getFloat,
                     [ ]);
 
-    registerService("getString",
+    registerService("qooxdoo.test.getString",
                     this.getString,
                     [ ]);
 
-    registerService("getBadString",
+    registerService("qooxdoo.test.getBadString",
                     this.getBadString,
                     [ ]);
 
-    registerService("getArrayInteger",
+    registerService("qooxdoo.test.getArrayInteger",
                     this.getArrayInteger,
                     [ ]);
 
-    registerService("getArrayString",
+    registerService("qooxdoo.test.getArrayString",
                     this.getArrayString,
                     [ ]);
 
-    registerService("getObject",
+    registerService("qooxdoo.test.getObject",
                     this.getObject,
                     [ ]);
 
-    registerService("getTrue",
+    registerService("qooxdoo.test.getTrue",
                     this.getTrue,
                     [ ]);
 
-    registerService("getFalse",
+    registerService("qooxdoo.test.getFalse",
                     this.getFalse,
                     [ ]);
 
-    registerService("getNull",
+    registerService("qooxdoo.test.getNull",
                     this.getNull,
                     [ ]);
 
-    registerService("isInteger",
+    registerService("qooxdoo.test.isInteger",
                     this.isInteger,
                     [ "val" ]);
 
-    registerService("isFloat",
+    registerService("qooxdoo.test.isFloat",
                     this.isFloat,
                     [ "val" ]);
 
-    registerService("isString",
+    registerService("qooxdoo.test.isString",
                     this.isString,
                     [ "val" ]);
 
-    registerService("isBoolean",
+    registerService("qooxdoo.test.isBoolean",
                     this.isBoolean,
                     [ "val" ]);
 
-    registerService("isArray",
+    registerService("qooxdoo.test.isArray",
                     this.isArray,
                     [ "val" ]);
 
-    registerService("isObject",
+    registerService("qooxdoo.test.isObject",
                     this.isObject,
                     [ "val" ]);
 
-    registerService("isNull",
+    registerService("qooxdoo.test.isNull",
                     this.isNull,
                     [ "val" ]);
 
-    registerService("getParam",
+    registerService("qooxdoo.test.getParam",
                     this.getParam,
                     [ "val" ]);
 
-    registerService("getParams",
+    registerService("qooxdoo.test.getParams",
                     this.getParams,
                     [ ]);
 
-    registerService("getCurrentTimestamp",
+    registerService("qooxdoo.test.getCurrentTimestamp",
                     this.getCurrentTimestamp,
                     [ ]);
 
-    registerService("getError",
+    registerService("qooxdoo.test.getError",
                     this.getError,
                     [ ]);
   },

@@ -23,7 +23,7 @@ qx.Class.define("jettysqlite.DbifJettySqlite",
     this.base(arguments);
     
     // Prepare for remote procedure calls to qooxdoo.test.*
-    this.__rpc = new liberated.appengine.Rpc([ "qooxdoo", "test" ], "/rpc");
+    this.__rpc = new liberated.jetty.Rpc("/rpc");
   },
   
   members :
@@ -35,7 +35,7 @@ qx.Class.define("jettysqlite.DbifJettySqlite",
      * Register a service name and function.
      *
      * @param serviceName {String}
-     *   The name of this service within the <[rpcKey]> namespace.
+     *   The fully-qualified name of this service
      *
      * @param fService {Function}
      *   The function which implements the given service name.

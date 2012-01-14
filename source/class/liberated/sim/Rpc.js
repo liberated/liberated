@@ -26,35 +26,13 @@ qx.Class.define("liberated.sim.Rpc",
   /**
    * Constructor for this RPC handler.
    *
-   * @param rpcKey {Array}
-   *   The list of prefix keys for access to the set of remote 
-   *   procedure calls supported in this object's services map.
-   *
-   *   Example: If the passed parameter is [ "sys", "fs" ] and 
-   *   one of the methods later added is "read" then the remote
-   *   procedure call will be called "sys.fs.read", and the services
-   *   map will contain:
-   *
-   *   {
-   *     sys :
-   *     {
-   *       fs :
-   *       {
-   *         read : function()
-   *         {
-   *           // implementation of sys.fs.read()
-   *         }
-   *       }
-   *     }
-   *   }
-   * 
    * @param url {String}
    *   The URL that must match for this service provider to be used
    */
-  construct : function(rpckey, url)
+  construct : function(url)
   {
     // Call the superclass constructor
-    this.base(arguments, rpckey);
+    this.base(arguments);
 
     // Save the URL
     this.setUrl(url);

@@ -202,7 +202,7 @@ var __arguments = arguments;
    server.setHandler(handlers);
 
    // Initialize the remote procedure call server itself
-   rpc = new liberated.jetty.Rpc([ "qooxdoo", "test" ]);
+   rpc = new liberated.jetty.Rpc();
 
    // Load all of the services
    load(__arguments[0] || "services.js");

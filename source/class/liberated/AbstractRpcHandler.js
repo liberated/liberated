@@ -25,30 +25,8 @@ qx.Class.define("liberated.AbstractRpcHandler",
 
   /**
    * Base constructor for each RPC handler.
-   *
-   * @param rpcKey {Array}
-   *   The list of prefix keys for access to the set of remote 
-   *   procedure calls supported in this object's services map.
-   *
-   *   Example: If the passed parameter is [ "sys", "fs" ] and 
-   *   one of the methods later added is "read" then the remote
-   *   procedure call will be called "sys.fs.read", and the services
-   *   map will contain:
-   *
-   *   {
-   *     sys :
-   *     {
-   *       fs :
-   *       {
-   *         read : function()
-   *         {
-   *           // implementation of sys.fs.read()
-   *         }
-   *       }
-   *     }
-   *   }
    */
-  construct : function(rpcKey)
+  construct : function()
   {
     var             i;
     var             services = {};
@@ -60,15 +38,6 @@ qx.Class.define("liberated.AbstractRpcHandler",
     // Initialize the services
     liberated.AbstractRpcHandler._services = services;
     
-    // Add each of the RPC keys
-    for (i = 0, part = services; i < rpcKey.length; i++)
-    {
-      part = part[rpcKey[i]] = {};
-    }
-    
-    // Store the final part, where registered services will go
-    liberated.AbstractRpcHandler._servicesByKey = part;
-    
     // Get an RPC Server instance.
     this.__rpcServer = new liberated.rpc.Server(
       liberated.AbstractRpcHandler._serviceFactory);
@@ -79,12 +48,6 @@ qx.Class.define("liberated.AbstractRpcHandler",
     /** The services map */
     _services : null,
     
-    /** 
-     * Reference to the final component of the services map, where registered
-     * services are placed.
-     */
-    _servicesByKey : null,
-
     /**
      *  Function to call for authorization to run the service method. If
      *  null, no authorization is required. Otherwise this should be a
@@ -157,7 +120,7 @@ qx.Class.define("liberated.AbstractRpcHandler",
      * Register a service name and function.
      *
      * @param serviceName {String}
-     *   The name of this service within the <[rpcKey]> namespace.
+     *   The fully-qualified name of this service.
      *
      * @param fService {Function}
      *   The function which implements the given service name.
@@ -170,7 +133,36 @@ qx.Class.define("liberated.AbstractRpcHandler",
      */
     registerService : function(serviceName, fService, context, paramNames)
     {
+      var             i;
       var             f;
+      var             part;
+      var             services = liberated.AbstractRpcHandler._services;
+      
+      // Split the fully-qualifieid service name into its constituent parts
+      serviceName = serviceName.split(".");
+      
+      // If there was only one part, make it as if there were multiple parts
+      if (! qx.lang.Type.isArray(serviceName))
+      {
+        serviceName = [ serviceName ];
+      }
+
+      // Add each of the RPC keys. The final component is the what will be
+      // used to save the service function, so is ignored for the moment.
+      for (i = 0, part = services;
+           i < serviceName.length - 1;
+           i++, services = part)
+      {
+        // Get this part of the service key
+        part = services[serviceName[i]];
+
+        // Has this part been defined yet?
+        if (! part)
+        {
+          // Nope. Define it.
+          part = services[serviceName[i]] = {};
+        }
+      }
       
       // Use this object as the context for the service
       f = qx.lang.Function.bind(fService, context);
@@ -178,8 +170,8 @@ qx.Class.define("liberated.AbstractRpcHandler",
       // Save the parameter names as a property of the function object
       f.parameterNames = paramNames;
 
-      // Save the service
-      liberated.AbstractRpcHandler._servicesByKey[serviceName] = f;
+      // Save the service function with the final component of the service name
+      part[serviceName[i]]  = f;
     },
 
     
@@ -187,7 +179,7 @@ qx.Class.define("liberated.AbstractRpcHandler",
      * Retrieve the parameter names for a registered service.
      *
      * @param serviceName {String}
-     *   The name of this service within the <[rpcKey]> namespace.
+     *   The fully-qualified name of this service.
      *
      * @return {Array|null|undefined}
      *   If the specified service exists and parameter names have been
@@ -200,16 +192,44 @@ qx.Class.define("liberated.AbstractRpcHandler",
      */
     getServiceParamNames : function(serviceName)
     {
-      // Get the stored service function
-      var f = liberated.AbstractRpcHandler._servicesByKey[serviceName];
+      var             i;
+      var             part;
+      var             services = liberated.AbstractRpcHandler._services;
+
+      // Split the service name into its constituent parts
+      // Split the fully-qualifieid service name into its constituent parts
+      serviceName = serviceName.split(".");
       
-      // Did we find it?
-      if (! f)
+      // If there was only one part, make it as if there were multiple parts
+      if (! qx.lang.Type.isArray(serviceName))
       {
-        // No, it is not a registered function.
-        return undefined;
+        serviceName = [ serviceName ];
+      }
+
+      for (i = 0, part = services;
+           i < serviceName.length - 1;
+           i++, services = part)
+      {
+        // Get this part of the service key
+        part = services[serviceName[i]];
+
+        // Has this part been defined yet?
+        if (! part)
+        {
+          // Nope. 
+          return undefined;
+        }
       }
       
+      // Get the stored service function
+      var f = part[serviceName[i]];
+      
+      if (! qx.lang.Type.isFunction(f))
+      {
+        // We expected a function but found something else
+        return undefined;
+      }
+
       // Were parameter names registered with the function?
       if (f.parameterNames)
       {
@@ -229,7 +249,7 @@ qx.Class.define("liberated.AbstractRpcHandler",
      * method that calls the static function of the same name.
      *
      * @param serviceName {String}
-     *   The name of this service within the <[rpcKey]> namespace.
+     *   The fully-qualified name of this service.
      *
      * @param fService {Function}
      *   The function which implements the given service name.
