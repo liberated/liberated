@@ -740,12 +740,16 @@ qx.Class.define("liberated.dbif.Entity",
      *
      * @return {Key}
      *   The blob ID of the just-added blob
-     * 
+     *
+     * @param contentType {String?}
+     *   The content type value. Defaults to "text/plain". The content type is
+     *   ignored by some database drivers.
+     *
      * @throws {Error}
      *   If an error occurs while writing the blob to the database, an Error
      *   is thrown.
      */
-    putBlob : function(blobData)
+    putBlob : function(blobData, contentType)
     {
       // This is a temporary place holder.
       // 
@@ -796,7 +800,7 @@ qx.Class.define("liberated.dbif.Entity",
      *
      * @param query {Function}
      *   The database-specific function to be used to query the database. It
-     *   must provide the signature of {@link query}.
+     *   must provide the signature of {@link __query}.
      *
      * @param put {Function}
      *   The database-specific function to be used to write an entry to the
@@ -808,19 +812,19 @@ qx.Class.define("liberated.dbif.Entity",
      *
      * @param getBlob {Function}
      *   The database-specific function to be used to retrieve a blob from the
-     *   database. It must provide the signature of {@link __getBlob}.
+     *   database. It must provide the signature of {@link getBlob}.
      *
      * @param putBlob {Function}
      *   The database-specific function to be used to write a blob to the
-     *   database. It must provide the signature of {@link __putBlob}.
+     *   database. It must provide the signature of {@link putBlob}.
      *
      * @param removeBlob {Function}
      *   The database-specific function to be used to remove a blob from the
-     *   database. It must provide the signature of {@link __removeBlob}.
+     *   database. It must provide the signature of {@link removeBlob}.
      *
      * @param beginTransaction {Function}
      *   The database-specific function to be used to begin a transaction. It
-     *   must provide the signature of {@link _beginTransaction}.
+     *   must provide the signature of {@link __beginTransaction}.
      *
      * @param custom {Map}
      *   Map containing database driver-specific features.
@@ -840,6 +844,17 @@ qx.Class.define("liberated.dbif.Entity",
       
       // Save custom (per-backend) functions
       liberated.dbif.Entity.custom = custom || {};
+    },
+    
+    /**
+     * Retrieve the current database provider name, if one has been specified
+     * 
+     * @return {String}
+     *   The name of the current database provider.
+     */
+    getCurrentDatabaseProvider : function()
+    {
+      return liberated.dbif.Entity.custom.dbif;
     }
   },
 

@@ -629,14 +629,17 @@ qx.Class.define("liberated.appengine.Dbif",
      * @param blobData {LongString}
      *   The data to be written as a blob
      *
+     * @param contentType {String?}
+     *   The content type value. Defaults to "text/plain"
+     *
      * @return {String}
      *   The blob ID of the just-added blob
-     * 
+     *
      * @throws {Error}
      *   If an error occurs while writing the blob to the database, an Error
      *   is thrown.
      */
-    putBlob : function(blobData)
+    putBlob : function(blobData, contentType)
     {
       var             key;
       var             file;
@@ -658,18 +661,19 @@ qx.Class.define("liberated.appengine.Dbif",
       fileService = FileServiceFactory.getFileService();
       
       // Create a new blob file with mime type "text/plain"
-      file = fileService.createNewBlobFile("text/plain");
+      file = fileService.createNewBlobFile(contentType || "text/plain");
       
       // Open a write channel, with lock=true so we can finalize it
       writeChannel = fileService.openWriteChannel(file, true);
       
       // Get a print writer for this channel, so we can write a string
-      printWriter = new PrintWriter(Channels.newWriter(writeChannel, "UTF8"));
+      printWriter = new PrintWriter(Channels.newWriter(writeChannel,
+                                                       "ISO-8859-1"));
 
       // Write our blob data as a series of 32k writes
       printWriter.write(blobData);
       printWriter.close();
-      
+
       // Finalize the channel
       writeChannel.closeFinally();
       
