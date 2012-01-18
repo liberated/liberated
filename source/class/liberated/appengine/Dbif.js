@@ -311,7 +311,11 @@ qx.Class.define("liberated.appengine.Dbif",
                switch(type)
                {
                case "String":
-                 return value ? String(value) : null;
+                 return (value 
+                         ? (value.getValue
+                            ? String(value.getValue()) // handle formerly Text
+                            : String(value))
+                         : null);
 
                case "Date":
                  return value ? Number(value) : null;
