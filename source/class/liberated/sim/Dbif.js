@@ -497,27 +497,31 @@ qx.Class.define("liberated.sim.Dbif",
               qx.lang.Type.isString(entityData[propertyName]) &&
               entityData[propertyName].length >= 500)
           {
-            throw new Error("App Engine limits String values to length 500. " +
-                            "(" + propertyName + ")");
+            qx.log.Logger.warn(
+              "App Engine limits String values to length 500. " +
+              "(" + propertyName + ")");
           }
-          else if (fields[propertyName] == "StringArray")
+          else if (fields[propertyName] == "StringArray" &&
+                   qx.lang.Type.isArray(entityData[propertyName]))
           {
             entityData[propertyName].forEach(
               function(str)
               {
                 if (! qx.lang.Type.isString(str) && str !== null)
                 {
-                  throw new Error("StringArray contains value not a string" +
-                                  "(" + propertyName + ")");
+                  qx.log.Logger.warn(
+                    "StringArray contains value not a string" +
+                    "(" + propertyName + ")");
                 }
                 
                 if (str.length >= 500)
                 {
-                  throw new Error(
+                  qx.log.Logger.warn(
                     "App Engine limits String values to length 500. " +
                     "(" + propertyName + ")");
                 }
-              });
+              },
+              this);
           }
         }
 
