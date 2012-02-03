@@ -488,8 +488,39 @@ qx.Class.define("liberated.sim.Dbif",
 
       // Create a simple map of properties and values to be put in the
       // database
-      for (propertyName in entity.getDatabaseProperties().fields)
+      for (propertyName in fields)
       {
+        // Check for constraints of destination environment
+        if (liberated.sim.Dbif.Destination == "App Engine")
+        {
+          if (fields[propertyName] == "String" &&
+              qx.lang.Type.isString(entityData[propertyName]) &&
+              entityData[propertyName].length >= 500)
+          {
+            throw new Error("App Engine limits String values to length 500. " +
+                            "(" + propertyName + ")");
+          }
+          else if (fields[propertyName] == "StringArray")
+          {
+            entityData[propertyName].forEach(
+              function(str)
+              {
+                if (! qx.lang.Type.isString(str) && str !== null)
+                {
+                  throw new Error("StringArray contains value not a string" +
+                                  "(" + propertyName + ")");
+                }
+                
+                if (str.length >= 500)
+                {
+                  throw new Error(
+                    "App Engine limits String values to length 500. " +
+                    "(" + propertyName + ")");
+                }
+              });
+          }
+        }
+
         // Add this property value to the data to be saved to the database.
         data[propertyName] = entityData[propertyName];
       }
