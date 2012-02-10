@@ -220,7 +220,8 @@ qx.Class.define("liberated.sim.Dbif",
                   {
                     qx.Bootstrap.warn(
                       "Expected criterion value to be string, " +
-                      "got " + typeof(criterion.value));
+                      "got " + typeof(criterion.value) +
+                      " (type=" + type + ", field=" + criterion.field + ")");
                     ret += "false";
                   }
                   else
@@ -238,7 +239,8 @@ qx.Class.define("liberated.sim.Dbif",
                   {
                     qx.Bootstrap.warn(
                       "Expected criterion value to be number, " +
-                      "got " + typeof(criterion.value));
+                      "got " + typeof(criterion.value) +
+                      " (type=" + type + ", field=" + criterion.field + ")");
                     ret += "false";
                   }
                   else
@@ -256,7 +258,8 @@ qx.Class.define("liberated.sim.Dbif",
                   {
                     qx.Bootstrap.warn(
                       "Expected criterion value to be string, " +
-                      "got " + typeof(criterion.value));
+                      "got " + typeof(criterion.value) +
+                      " (type=" + type + ", field=" + criterion.field + ")");
                     ret += "false";
                   }
                   else if (criterion.filterOp)
@@ -279,7 +282,8 @@ qx.Class.define("liberated.sim.Dbif",
                   {
                     qx.Bootstrap.warn(
                       "Expected criterion value to be string, " +
-                      "got " + typeof(criterion.value));
+                      "got " + typeof(criterion.value) +
+                      " (type=" + type + ", field=" + criterion.field + ")");
                     ret += "false";
                   }
                   else if (criterion.filterOp)
