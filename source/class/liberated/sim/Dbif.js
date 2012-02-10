@@ -704,14 +704,6 @@ qx.Class.define("liberated.sim.Dbif",
      */
     beginTransaction : function()
     {
-      var             log =
-        (typeof console != "undefined" && console.log 
-         ? console.log 
-         : function() {} 
-        );
-
-      log("Simulating BEGIN");
-
       // Ensure that this isn't a recursive transaction
       if (liberated.sim.Dbif.__bTransactionActive)
       {
@@ -725,13 +717,11 @@ qx.Class.define("liberated.sim.Dbif",
         {
           commit : function()
           {
-            log("Simulating COMMIT");
             liberated.sim.Dbif.__bTransactionActive = false;
           },
           
           rollback : function()
           {
-            log("Simulating ROLLBACK");
             liberated.sim.Dbif.__bTransactionActive = false;
           }
         });
