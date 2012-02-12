@@ -599,11 +599,19 @@ qx.Class.define("liberated.sim.Dbif",
      * @return {String}
      *   The blob ID of the just-added blob
      * 
+     * @param contentType {String?}
+     *   The content type value. Defaults to "text/plain". 
+     *   (Not used by this driver)
+     *
+     * @param filename {String?}
+     *   The filename for this blob. 
+     *   (Not used by this driver.)
+     *
      * @throws {Error}
      *   If an error occurs while writing the blob to the database, an Error
      *   is thrown.
      */
-    putBlob : function(blobData)
+    putBlob : function(blobData, contentType, filename)
     {
       var             blobStorage = liberated.sim.Dbif.BlobStorage;
       var             Db = liberated.sim.Dbif.Database;

@@ -633,6 +633,9 @@ qx.Class.define("liberated.appengine.Dbif",
      * @param contentType {String?}
      *   The content type value. Defaults to "text/plain"
      *
+     * @param filename {String?}
+     *   The filename for this blob.
+     *
      * @return {String}
      *   The blob ID of the just-added blob
      *
@@ -640,7 +643,7 @@ qx.Class.define("liberated.appengine.Dbif",
      *   If an error occurs while writing the blob to the database, an Error
      *   is thrown.
      */
-    putBlob : function(blobData, contentType)
+    putBlob : function(blobData, contentType, filename)
     {
       var             key;
       var             file;
@@ -662,7 +665,8 @@ qx.Class.define("liberated.appengine.Dbif",
       fileService = FileServiceFactory.getFileService();
       
       // Create a new blob file with mime type "text/plain"
-      file = fileService.createNewBlobFile(contentType || "text/plain");
+      file =
+        fileService.createNewBlobFile(contentType || "text/plain", filename);
       
       // Open a write channel, with lock=true so we can finalize it
       writeChannel = fileService.openWriteChannel(file, true);

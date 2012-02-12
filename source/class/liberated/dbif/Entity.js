@@ -745,11 +745,15 @@ qx.Class.define("liberated.dbif.Entity",
      *   The content type value. Defaults to "text/plain". The content type is
      *   ignored by some database drivers.
      *
+     * @param filename {String?}
+     *   The filename for this blob. The filename is ignored by some database
+     *   drivers.
+     *
      * @throws {Error}
      *   If an error occurs while writing the blob to the database, an Error
      *   is thrown.
      */
-    putBlob : function(blobData, contentType)
+    putBlob : function(blobData, contentType, filename)
     {
       // This is a temporary place holder.
       // 
