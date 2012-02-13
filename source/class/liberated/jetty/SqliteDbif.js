@@ -196,7 +196,9 @@ qx.Class.define("liberated.jetty.SqliteDbif",
       query.push(liberated.jetty.SqliteDbif.BLOB_KEY_NAME);
       query.push("INTEGER PRIMARY KEY,");
       query.push(liberated.jetty.SqliteDbif.BLOB_FIELD_NAME);
-      query.push("BLOB");
+      query.push("BLOB,");
+      query.push("contentType STRING,");
+      query.push("filename STRING");
       query.push(");");
 
       // Prepare and issue a query
@@ -676,6 +678,12 @@ qx.Class.define("liberated.jetty.SqliteDbif",
      * @param blobData {LongString}
      *   The data to be written as a blob
      *
+     * @param contentType {String?}
+     *   The content type value. Defaults to "text/plain"
+     *
+     * @param filename {String?}
+     *   The filename for this blob.
+     *
      * @return {String}
      *   The blob ID of the just-added blob
      * 
@@ -683,19 +691,33 @@ qx.Class.define("liberated.jetty.SqliteDbif",
      *   If an error occurs while writing the blob to the database, an Error
      *   is thrown.
      */
-    putBlob : function(blobData)
+    putBlob : function(blobData, contentType, filename)
     {
       var             db;
       var             query;
       var             preparedQuery;
       var             key;
       
+      // If no content type is specified...
+      if (! contentType)
+      {
+        // ... then default it
+        contentType = "text/plain";
+      }
+      
+      // if no filename is specified...
+      if (typeof filename == "undefined")
+      {
+        // ... then use null.
+        filename = null;
+      }
+
       // Generate the insertion query
       query =
         [
           "INSERT INTO",
           liberated.jetty.SqliteDbif.BLOB_TABLE_NAME,
-          "VALUES (?1);"
+          "VALUES (?1, ?2, ?3);"
         ].join(" ");
       
       // Retrieve this thread's database connection
@@ -707,6 +729,8 @@ qx.Class.define("liberated.jetty.SqliteDbif",
       {
         // Bind the data to the query
         preparedQuery.bind(1, blobData);
+        preparedQuery.bind(2, contentType);
+        preparedQuery.bind(3, filename);
         
         // Execute the insertion query
         preparedQuery.step();
@@ -777,6 +801,61 @@ qx.Class.define("liberated.jetty.SqliteDbif",
       
       // Give 'em what they came for
       return blob;
+    },
+    
+    /**
+     * Retrieve the extra blob info (content type and filename) from the
+     * database
+     *
+     * @param blobId {Key}
+     *   The blob ID of the blob to be retrieved
+     * 
+     * @return {Map}
+     *   A map containing two fields: contentType and filename.
+     */
+    getBlobInfo : function(blobId)
+    {
+      var             db;
+      var             query;
+      var             preparedQuery;
+      var             retval = {};
+      
+      // Generate the insertion query
+      query =
+        [
+          "SELECT contentType, filename",
+          "FROM",
+          liberated.jetty.SqliteDbif.BLOB_TABLE_NAME,
+          "WHERE",
+          liberated.jetty.SqliteDbif.BLOB_KEY_NAME,
+          "= ?1;"
+        ].join(" ");
+      
+      // Retrieve this thread's database connection
+      db = liberated.jetty.SqliteDbif.__getDB();
+
+      // Prepare and issue a query
+      preparedQuery = db.prepare(query);
+      try
+      {
+        // Bind the blob id to the query
+        preparedQuery.bind(1, blobId);
+        
+        // Execute the insertion query
+        preparedQuery.step();
+        
+        // Retrieve the data
+        retval.contentType = preparedQuery.columnValue(0);
+        retval.filename = preparedQuery.columnValue(1);
+      }
+      finally
+      {
+        // Clean up
+        preparedQuery.dispose();
+      }
+      
+      // Give 'em what they came for
+      return retval;
     },
     
     /**
