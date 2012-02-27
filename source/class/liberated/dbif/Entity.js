@@ -529,7 +529,7 @@ qx.Class.define("liberated.dbif.Entity",
              criterion.children.forEach(
                function(child)
                {
-                 replaceCanonFields(criterion[child]);
+                 replaceCanonFields(child);
                });
            }
          })(searchCriteria);
