@@ -129,6 +129,7 @@ qx.Class.define("liberated.jetty.SqliteDbif",
           case "StringArray":
           case "LongStringArray":
           case "NumberArray":
+          case "BlobId":
             fieldData += "TEXT";
             break;
 
@@ -469,6 +470,7 @@ qx.Class.define("liberated.jetty.SqliteDbif",
                  {
                  case "String":
                  case "LongString":
+                 case "BlobId":
                    return value ? String(value) : null;
 
                  case "Date":
@@ -483,6 +485,7 @@ qx.Class.define("liberated.jetty.SqliteDbif",
                  case "StringArray":
                  case "LongStringArray":
                  case "NumberArray":
+                 case "BlobIdArray":
                    if (value)
                    {
                      // On the assumption that these arrays are maintained

@@ -290,8 +290,8 @@ qx.Class.define("liberated.dbif.Entity",
      *   properties (fields) to be stored for each object of this type. The
      *   value corresponding to each of those member names is the type of
      *   value to be stored in that property, and may be any of: "String",
-     *   "LongString", "Date", "Key", "Integer", "Float", "KeyArray",
-     *   "StringArray", "LongStringArray", or "NumberArray".
+     *   "LongString", "Date", "Key", "Integer", "Float", "BlobId", "KeyArray",
+     *   "StringArray", "LongStringArray", "NumberArray", or "BlobIdArray".
      *
      * @param keyField {String|Array}
      *   The name of the property that is to be used as the key field. If the

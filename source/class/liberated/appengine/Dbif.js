@@ -312,6 +312,7 @@ qx.Class.define("liberated.appengine.Dbif",
                {
                case "String":
                case "LongString":
+               case "BlobId":
                  return (value 
                          ? (value.getValue
                             ? String(value.getValue()) // handle Text
@@ -330,6 +331,7 @@ qx.Class.define("liberated.appengine.Dbif",
                case "StringArray":
                case "LongStringArray":
                case "NumberArray":
+               case "BlobIdArray":
                  if (value)
                  {
                    // Initialize the return array
@@ -518,6 +520,7 @@ qx.Class.define("liberated.appengine.Dbif",
              {
              case "String":
              case "Float":
+             case "BlobId":
                return value;
 
              case "Key":
@@ -539,6 +542,7 @@ qx.Class.define("liberated.appengine.Dbif",
              case "LongStringArray":
              case "IntegerArray":
              case "FloatArray":
+             case "BlobIdArray":
                if (type == "IntegerArray")
                {
                  // integer Numbers must be converted to Java longs to avoid
