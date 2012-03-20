@@ -772,7 +772,7 @@ qx.Class.define("liberated.dbif.Entity",
      *   The blob data retrieved from the database. If there is no blob with
      *   the given ID, undefined is returned.
      */
-    getBlob : function(entity)
+    getBlob : function(blobId)
     {
       // This is a temporary place holder.
       // 
@@ -788,7 +788,7 @@ qx.Class.define("liberated.dbif.Entity",
      *   The blob ID of the blob to be removed. If the specified blob id does
      *   not exist, this request fails silently.
      */
-    removeBlob : function(entity)
+    removeBlob : function(blobId)
     {
       // This is a temporary place holder.
       // 
