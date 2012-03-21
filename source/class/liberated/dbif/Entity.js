@@ -738,9 +738,6 @@ qx.Class.define("liberated.dbif.Entity",
      * @param blobData {LongString}
      *   The data to be written as a blob
      *
-     * @return {Key}
-     *   The blob ID of the just-added blob
-     *
      * @param contentType {String?}
      *   The content type value. Defaults to "text/plain". The content type is
      *   ignored by some database drivers.
@@ -748,6 +745,9 @@ qx.Class.define("liberated.dbif.Entity",
      * @param filename {String?}
      *   The filename for this blob. The filename is ignored by some database
      *   drivers.
+     *
+     * @return {Key}
+     *   The blob ID of the just-added blob
      *
      * @throws {Error}
      *   If an error occurs while writing the blob to the database, an Error
