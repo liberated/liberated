@@ -288,10 +288,14 @@ qx.Class.define("liberated.dbif.Entity",
      * @param propertyTypes {Map}
      *   A map containing, as its member names, the name of each of the
      *   properties (fields) to be stored for each object of this type. The
-     *   value corresponding to each of those member names is the type of
-     *   value to be stored in that property, and may be any of: "String",
-     *   "LongString", "Date", "Key", "Integer", "Float", "BlobId", "KeyArray",
-     *   "StringArray", "LongStringArray", "NumberArray", or "BlobIdArray".
+     *   value corresponding to each of those member names is either a string
+     *   representing the type of value to be stored in that property (which
+     *   may be any of: "String", "LongString", "Date", "Key", "Integer",
+     *   "Float", "BlobId", "KeyArray", "StringArray", "LongStringArray",
+     *   "NumberArray", or "BlobIdArray"), or a map containing at least a
+     *   'type' field, one of the above strings, and optionally a 'reference'
+     *   field to indicate the entityType of which this property contains a
+     *   key value.
      *
      * @param keyField {String|Array}
      *   The name of the property that is to be used as the key field. If the
@@ -351,6 +355,8 @@ qx.Class.define("liberated.dbif.Entity",
                                      canonicalize)
     {
       var             pn;       // property name
+      var             prop;
+      var             references = {};
 
       // If there's no key field name specified...
       if (! keyField)
@@ -358,6 +364,37 @@ qx.Class.define("liberated.dbif.Entity",
         // Add "uid" to the list of database properties.
         propertyTypes["uid"] = "Key";
         keyField = "uid";
+      }
+
+      // Scan for special features of properties.
+      for (pn in propertyTypes)
+      {
+        prop = propertyTypes[pn];
+
+        // If the value is a string, there are no special features
+        // provided. If the value is a map, look for specific features.
+        if (qx.lang.Type.isObject(prop))
+        {
+          // Extract known features, and discard others. Replace the property
+          // type field with a string containing only the type.
+          if (qx.core.Environment.get("qx.debug"))
+          {
+            qx.core.Assert.assertKeyInMap(
+              "type", 
+              prop,
+              "Missing 'type' field for property " + pn + 
+              " of entity type " + entityType);
+          }
+        
+          // If there's a 'reference' member...
+          if (prop.reference)
+          {
+            references[pn] = prop.reference;
+          }
+
+          // Replace the map with the property type string
+          propertyTypes[pn] = prop.type;
+        }
       }
 
       // Add the canonicalize properties to the property list
@@ -375,7 +412,8 @@ qx.Class.define("liberated.dbif.Entity",
         {
           keyField      : keyField,
           fields        : propertyTypes,
-          canonicalize  : canonicalize
+          canonicalize  : canonicalize,
+          references    : references
         };
     },
 
