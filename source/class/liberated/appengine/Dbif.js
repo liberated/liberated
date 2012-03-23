@@ -669,8 +669,16 @@ qx.Class.define("liberated.appengine.Dbif",
       fileService = FileServiceFactory.getFileService();
       
       // Create a new blob file with mime type "text/plain"
-      file =
-        fileService.createNewBlobFile(contentType || "text/plain", filename);
+      contentType =  contentType || "text/plain";
+      if (filename)
+      {
+        file = fileService.createNewBlobFile(contentType, filename);
+      }
+      else
+      {
+        // Don't call Java function with undefined parameter
+        file = fileService.createNewBlobFile(contentType);
+      }
       
       // Open a write channel, with lock=true so we can finalize it
       writeChannel = fileService.openWriteChannel(file, true);
