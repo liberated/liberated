@@ -300,7 +300,8 @@ qx.Class.define("liberated.sim.Dbif",
                   break;
 
                 default:
-                  throw new Error("Unknown property type: " + type);
+                  throw new Error("Unknown property type: " + criterion.field +
+                                  " of entity type " + type);
                 }
                 break;
 
