@@ -51,7 +51,7 @@ qx.Mixin.define("jettysqlite.MCounter",
         [],
         this);
 
-      // Return number of likes (which may or may not have changed)
+      // Return new counter value
       return counterDataObj.count;
     }
   }
