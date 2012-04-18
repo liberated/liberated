@@ -418,10 +418,12 @@ qx.Class.define("liberated.appengine.Dbif",
         key = entityData[keyProperty];
       }
 
-      // Ensure that there's either a real key or no key; not empty string
+      // Ensure that there's either a real key or no key; not empty string.
+      // This also catches a key of 0 (because (0=="") is true!), which for some
+      // reason, App Engine disallows.
       if (key == "")
       {
-        throw new Error("Found disallowed empty key");
+        throw new Error("Found disallowed empty or zero key");
       }
 
       // Get the field names for this entity type
