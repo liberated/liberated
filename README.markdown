@@ -27,3 +27,7 @@ server. Since the application-specific code has been fully tested in the
 simulated environment and moves unchanged to the server, it is unlikely that
 bugs will be encountered at the server that did not exist in the simulated
 environment.
+
+<h2>Get started with LIBERATED</h2>
+A complete quick-start project for LIBERATED is available. See the
+instructions at https://github.com/liberated/liberated-quick-start/wiki
