@@ -60,9 +60,10 @@ qx.Class.define("liberated.sim.Dbif",
      *   The database map. Each top-level key in this map is an object type,
      *   which contains a map of key/value pairs.
      */
-    setDb : function(db)
+    setDb : function(db, nextKey)
     {
       liberated.sim.Dbif.Database = db;
+      liberated.sim.Dbif.__nextKey = nextKey || 0;
     },
 
 
@@ -541,6 +542,7 @@ qx.Class.define("liberated.sim.Dbif",
       if (typeof window.localStorage !== "undefined")
       {
         qx.Bootstrap.debug("Writing DB to Web Storage");
+        localStorage.nextKey = liberated.sim.Dbif.__nextKey;
         localStorage.simDB =
           qx.lang.Json.stringify(liberated.sim.Dbif.Database);
       }
@@ -586,6 +588,7 @@ qx.Class.define("liberated.sim.Dbif",
       if (typeof window.localStorage !== "undefined")
       {
         qx.Bootstrap.debug("Writing DB to Web Storage");
+        localStorage.nextKey = liberated.sim.Dbif.__nextKey;
         localStorage.simDB = 
           qx.lang.Json.stringify(liberated.sim.Dbif.Database);
       }
