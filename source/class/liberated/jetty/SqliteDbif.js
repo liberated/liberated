@@ -423,7 +423,14 @@ qx.Class.define("liberated.jetty.SqliteDbif",
         params.forEach(
           function(param, i)
           {
-            preparedQuery.bind(i+1, param);
+            if (param === null)
+            {
+              preparedQuery.bindNull(i+1);
+            }
+            else
+            {
+              preparedQuery.bind(i+1, param);
+            }
           });
 
         // Execute the query
@@ -569,7 +576,22 @@ qx.Class.define("liberated.jetty.SqliteDbif",
           query.push(",");
         }
         query.push("?" + i++);
-        params.push(entityData[fieldName]);
+        
+        switch(fields[fieldName])
+        {
+        case "KeyArray":
+        case "StringArray":
+        case "LongStringArray":
+        case "NumberArray":
+        case "BlobIdArray":
+          params.push(qx.lang.Json.stringify(entityData[fieldName]));
+          break;
+          
+        default :
+          params.push(entityData[fieldName]);
+          break;
+        }
+
       }
       query.push(");");
 
@@ -584,7 +606,14 @@ qx.Class.define("liberated.jetty.SqliteDbif",
         params.forEach(
           function(param, i)
           {
-            preparedQuery.bind(i+1, param);
+            if (param === null)
+            {
+              preparedQuery.bindNull(i+1);
+            }
+            else
+            {
+              preparedQuery.bind(i+1, param);
+            }
           });
         
         // Execute the insertion query
@@ -662,7 +691,14 @@ qx.Class.define("liberated.jetty.SqliteDbif",
         params.forEach(
           function(param, i)
           {
-            preparedQuery.bind(i+1, param);
+            if (param === null)
+            {
+              preparedQuery.bindNull(i+1);
+            }
+            else
+            {
+              preparedQuery.bind(i+1, param);
+            }
           });
         
         // Execute the insertion query
@@ -731,9 +767,22 @@ qx.Class.define("liberated.jetty.SqliteDbif",
       try
       {
         // Bind the data to the query
-        preparedQuery.bind(1, blobData);
-        preparedQuery.bind(2, contentType);
-        preparedQuery.bind(3, filename);
+        [
+          { column : 1, data : blobData },
+          { column : 2, data : contentType },
+          { column : 3, data : filename }
+        ].forEach(
+          function(info)
+          {
+            if (info.data === null)
+            {
+              preparedQuery.bindNull(info.column);
+            }
+            else
+            {
+              preparedQuery.bind(info.column, info.data);
+            }
+          });
         
         // Execute the insertion query
         preparedQuery.step();
@@ -788,7 +837,14 @@ qx.Class.define("liberated.jetty.SqliteDbif",
       try
       {
         // Bind the blob id to the query
-        preparedQuery.bind(1, blobId);
+        if (blobId === null)
+        {
+          preparedQuery.bindNull(1);
+        }
+        else
+        {
+          preparedQuery.bind(1, blobId);
+        }
         
         // Execute the insertion query
         preparedQuery.step();
@@ -842,7 +898,14 @@ qx.Class.define("liberated.jetty.SqliteDbif",
       try
       {
         // Bind the blob id to the query
-        preparedQuery.bind(1, blobId);
+        if (blobId === null)
+        {
+          preparedQuery.bindNull(1);
+        }
+        else
+        {
+          preparedQuery.bind(1, blobId);
+        }
         
         // Execute the insertion query
         preparedQuery.step();
@@ -893,7 +956,14 @@ qx.Class.define("liberated.jetty.SqliteDbif",
       try
       {
         // Bind the data to the query
-        preparedQuery.bind(1, blobId);
+        if (blobId === null)
+        {
+          preparedQuery.bindNull(1);
+        }
+        else
+        {
+          preparedQuery.bind(1, blobId);
+        }
         
         // Execute the insertion query
         preparedQuery.step();
