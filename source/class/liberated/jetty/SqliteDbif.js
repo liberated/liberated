@@ -50,6 +50,9 @@ qx.Class.define("liberated.jetty.SqliteDbif",
         db = new Sq4java.SQLiteConnection(new java.io.File(file));
         db.open(true);
         
+        // Don't immediately fail if the database is buty. Retry.
+        db.setBusyTimeout(2000);
+        
         // Save the database handle
         liberated.jetty.SqliteDbif.__dbPerThread.set(db);
       }
