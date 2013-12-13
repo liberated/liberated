@@ -74,10 +74,10 @@ qx.Class.define("liberated.sim.Dbif",
      *   The name of the class, descended from liberated.dbif.Entity, of
      *   the object type which is to be queried in the database.
      *
-     * @param searchCriteria
+     * @param searchCriteria {Map?}
      *   See {@link liberated.dbif.Entity#query} for details.
      *
-     * @param resultCriteria
+     * @param resultCriteria {Map?}
      *   See {@link liberated.dbif.Entity#query} for details.
      *
      * @return {Array}

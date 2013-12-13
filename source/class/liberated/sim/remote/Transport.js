@@ -61,7 +61,7 @@ qx.Class.define("liberated.sim.remote.Transport",
     /**
      * Whether the current browser supports this transport
      * 
-     * @return
+     * @return {Boolean}
      *   true, always. This transport is supported by all browsers.
      */
     isSupported : function() 
