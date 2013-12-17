@@ -220,25 +220,8 @@ qx.Class.define("liberated.sim.remote.Transport",
       // If we don't yet have a response...
       if (this.getState() !== "completed")
       {
-        if (qx.core.Environment.get("qx.debug"))
-        {
-          if (qx.core.Environment.get("qx.ioRemoteDebug")) 
-          {
-            this.warn("Transfer not complete, ignoring content!");
-          }
-        }
-
         // ... there's nothing useful to give 'em.
         return null;
-      }
-
-      if (qx.core.Environment.get("qx.debug"))
-      {
-        if (qx.core.Environment.get("qx.ioRemoteDebug")) 
-        {
-          this.debug("Returning content for responseType: " +
-                     this.getResponseType());
-        }
       }
 
       // What response type are we expecting?
@@ -246,27 +229,11 @@ qx.Class.define("liberated.sim.remote.Transport",
       {
       case "text/plain":
       case "text/html":
-        if (qx.core.Environment.get("qx.debug"))
-        {
-          if (qx.core.Environment.get("qx.ioRemoteDebugData"))
-          {
-            this.debug("Response: " + this._responseContent);
-          }
-        }
-
         // It's an ordinary string. We can give it to them as is.
         ret = this._responseContent;
         return (ret === 0 ? 0 : (ret || null));
 
       case "application/json":
-        if (qx.core.Environment.get("qx.debug"))
-        {
-          if (qx.core.Environment.get("qx.ioRemoteDebugData"))
-          {
-            this.debug("Response: " + text);
-          }
-        }
-
         try 
         {
           text = this.__responseData;
@@ -288,14 +255,6 @@ qx.Class.define("liberated.sim.remote.Transport",
         }
 
       case "text/javascript":
-        if (qx.core.Environment.get("qx.debug"))
-        {
-          if (qx.core.Environment.get("qx.ioRemoteDebugData"))
-          {
-            this.debug("Response: " + text);
-          }
-        }
-
         try 
         {
           text = this.__responseData;
@@ -317,15 +276,6 @@ qx.Class.define("liberated.sim.remote.Transport",
 
       case "application/xml":
         text = this.getResponseXml();
-
-        if (qx.core.Environment.get("qx.debug"))
-        {
-          if (qx.core.Environment.get("qx.ioRemoteDebugData"))
-          {
-            this.debug("Response: " + text);
-          }
-        }
-
         return (text === 0 ? 0 : (text || null));
 
       default:
