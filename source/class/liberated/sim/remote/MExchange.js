@@ -111,13 +111,6 @@ qx.Mixin.define("liberated.sim.remote.MExchange",
 
           try
           {
-            if (qx.core.Environment.get("qx.debug"))
-            {
-              if (qx.core.Environment.get("qx.ioRemoteDebug")) {
-                this.debug("Using implementation: " + transportImpl.classname);
-              }
-            }
-
             transport = new transportImpl;
             this.setImplementation(transport);
 
