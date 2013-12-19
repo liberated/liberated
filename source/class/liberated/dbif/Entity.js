@@ -738,7 +738,7 @@ qx.Class.define("liberated.dbif.Entity",
           // An error occurred writing or commiting. Retry.
           if (typeof console != "undefined" && console.log)
           {
-            console.log("Database Write error: " + e);
+            console.log("Database Write error: " + e + "\n" + e.stack);
           }
 
           // Roll back the transaction
