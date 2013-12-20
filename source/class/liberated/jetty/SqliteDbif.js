@@ -6,10 +6,6 @@
  *   EPL : http://www.eclipse.org/org/documents/epl-v10.php
  */
 
-/*
-@ignore(JavaAdapter)
- */
-
 qx.Class.define("liberated.jetty.SqliteDbif",
 {
   extend  : qx.core.Object,
@@ -72,6 +68,8 @@ qx.Class.define("liberated.jetty.SqliteDbif",
      * 
      * @param databaseName {String}
      *   The name of the database file.
+     * 
+     * @ignore(JavaAdapter)
      */
     init : function(databaseName)
     {
@@ -227,7 +225,7 @@ qx.Class.define("liberated.jetty.SqliteDbif",
      *   The name of the class, descended from liberated.dbif.Entity, of
      *   the object type which is to be queried in the database.
      *
-     * @param criteria
+     * @param criteria {Map}
      *   See {@link liberated.dbif.Entity#query} for details.
      *
      * @return {Array}
