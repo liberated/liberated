@@ -7,7 +7,7 @@
  */
 
 /*
-#ignore(JavaAdapter)
+@ignore(JavaAdapter)
  */
 
 qx.Class.define("liberated.jetty.SqliteDbif",

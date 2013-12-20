@@ -21,8 +21,8 @@
  */
 
 /*
-#asset(liberated/*)
-#require(qx.io.remote.Exchange)
+@asset(liberated/*)
+@require(qx.io.remote.Exchange)
 */
 
 

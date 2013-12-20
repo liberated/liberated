@@ -12,7 +12,7 @@
  */
 
 /*
-#asset(liberated/*)
+@asset(liberated/*)
 */
 
 /**

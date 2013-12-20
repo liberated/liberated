@@ -12,8 +12,8 @@
  */
 
 /*
-#asset(liberated/*)
-#use(liberated.sim.remote.Transport)
+@asset(liberated/*)
+@use(liberated.sim.remote.Transport)
 */
 
 
