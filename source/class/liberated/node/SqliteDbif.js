@@ -10,7 +10,7 @@
  * This code relies on http://github.grumdrig.com/node-sqlite/
  */
 
-qx.Class.define("liberated.nodejs.SqliteDbif",
+qx.Class.define("liberated.node.SqliteDbif",
 {
   extend  : qx.core.Object,
   type    : "abstract",
@@ -60,7 +60,7 @@ qx.Class.define("liberated.nodejs.SqliteDbif",
       // Open the database
       sqlite = require("sqlite");
       db = sqlite.openDatabaseSync(databaseName);
-      liberated.nodejs.SqliteDbif.__db = db;
+      liberated.node.SqliteDbif.__db = db;
 
       // For each entity type...
       for (className in entityTypeMap)
@@ -152,11 +152,11 @@ qx.Class.define("liberated.nodejs.SqliteDbif",
       // Create the Blobs table
       query = [];
       query.push("CREATE TABLE IF NOT EXISTS");
-      query.push("\"" + liberated.nodejs.SqliteDbif.BLOB_TABLE_NAME + "\"");
+      query.push("\"" + liberated.node.SqliteDbif.BLOB_TABLE_NAME + "\"");
       query.push("(");
-      query.push(liberated.nodejs.SqliteDbif.BLOB_KEY_NAME);
+      query.push(liberated.node.SqliteDbif.BLOB_KEY_NAME);
       query.push("INTEGER PRIMARY KEY,");
-      query.push(liberated.nodejs.SqliteDbif.BLOB_FIELD_NAME);
+      query.push(liberated.node.SqliteDbif.BLOB_FIELD_NAME);
       query.push("BLOB,");
       query.push("contentType STRING,");
       query.push("filename STRING");
@@ -373,7 +373,7 @@ qx.Class.define("liberated.nodejs.SqliteDbif",
       }
       
       // Retrieve this thread's database connection
-      db = liberated.nodejs.SqliteDbif.__db;
+      db = liberated.node.SqliteDbif.__db;
 
       // Prepare and issue a query
       preparedQuery = db.prepare(query);
@@ -545,7 +545,7 @@ qx.Class.define("liberated.nodejs.SqliteDbif",
       query.push(");");
 
       // Retrieve this thread's database connection
-      db = liberated.nodejs.SqliteDbif.__db;
+      db = liberated.node.SqliteDbif.__db;
 
       // Prepare and issue a query
       preparedQuery = db.prepare(query.join(" "));
@@ -623,7 +623,7 @@ qx.Class.define("liberated.nodejs.SqliteDbif",
       }
 
       // Retrieve this thread's database connection
-      db = liberated.nodejs.SqliteDbif.__db;
+      db = liberated.node.SqliteDbif.__db;
 
       // Prepare and issue a query
       preparedQuery = db.prepare(query.join(" "));
@@ -690,12 +690,12 @@ qx.Class.define("liberated.nodejs.SqliteDbif",
       query =
         [
           "INSERT INTO",
-          liberated.nodejs.SqliteDbif.BLOB_TABLE_NAME,
+          liberated.node.SqliteDbif.BLOB_TABLE_NAME,
           "VALUES (?1, ?2, ?3);"
         ].join(" ");
       
       // Retrieve this thread's database connection
-      db = liberated.nodejs.SqliteDbif.__db;
+      db = liberated.node.SqliteDbif.__db;
 
       // Prepare and issue a query
       preparedQuery = db.prepare(query);
@@ -750,16 +750,16 @@ qx.Class.define("liberated.nodejs.SqliteDbif",
       query =
         [
           "SELECT",
-          liberated.nodejs.SqliteDbif.BLOB_FIELD_NAME,
+          liberated.node.SqliteDbif.BLOB_FIELD_NAME,
           "FROM",
-          liberated.nodejs.SqliteDbif.BLOB_TABLE_NAME,
+          liberated.node.SqliteDbif.BLOB_TABLE_NAME,
           "WHERE",
-          liberated.nodejs.SqliteDbif.BLOB_KEY_NAME,
+          liberated.node.SqliteDbif.BLOB_KEY_NAME,
           "= ?1;"
         ].join(" ");
       
       // Retrieve this thread's database connection
-      db = liberated.nodejs.SqliteDbif.__db;
+      db = liberated.node.SqliteDbif.__db;
 
       // Prepare and issue a query
       preparedQuery = db.prepare(query);
@@ -775,7 +775,7 @@ qx.Class.define("liberated.nodejs.SqliteDbif",
         if (row)
         {
           // ... then retrieve the blob data
-          blob = blob[liberated.nodejs.SqliteDbif.BLOB_FIELD_NAME];
+          blob = blob[liberated.node.SqliteDbif.BLOB_FIELD_NAME];
         }
       }
       finally
@@ -811,14 +811,14 @@ qx.Class.define("liberated.nodejs.SqliteDbif",
         [
           "SELECT contentType, filename",
           "FROM",
-          liberated.nodejs.SqliteDbif.BLOB_TABLE_NAME,
+          liberated.node.SqliteDbif.BLOB_TABLE_NAME,
           "WHERE",
-          liberated.nodejs.SqliteDbif.BLOB_KEY_NAME,
+          liberated.node.SqliteDbif.BLOB_KEY_NAME,
           "= ?1;"
         ].join(" ");
       
       // Retrieve this thread's database connection
-      db = liberated.nodejs.SqliteDbif.__db;
+      db = liberated.node.SqliteDbif.__db;
 
       // Prepare and issue a query
       preparedQuery = db.prepare(query);
@@ -866,14 +866,14 @@ qx.Class.define("liberated.nodejs.SqliteDbif",
       query =
         [
           "DELETE FROM",
-          liberated.nodejs.SqliteDbif.BLOB_TABLE_NAME,
+          liberated.node.SqliteDbif.BLOB_TABLE_NAME,
           "WHERE",
-          liberated.nodejs.SqliteDbif.BLOB_FIELD_NAME,
+          liberated.node.SqliteDbif.BLOB_FIELD_NAME,
           "= ?1;"
         ].join(" ");
       
       // Retrieve this thread's database connection
-      db = liberated.nodejs.SqliteDbif.__db;
+      db = liberated.node.SqliteDbif.__db;
 
       // Prepare and issue a query
       preparedQuery = db.prepare(query);
@@ -909,7 +909,7 @@ qx.Class.define("liberated.nodejs.SqliteDbif",
       query = "BEGIN;";
       
       // Retrieve this thread's database connection
-      db = liberated.nodejs.SqliteDbif.__db;
+      db = liberated.node.SqliteDbif.__db;
 
       // Prepare and issue a query
       preparedQuery = db.prepare(query);
@@ -926,8 +926,8 @@ qx.Class.define("liberated.nodejs.SqliteDbif",
 
       return (
         {
-          commit   : liberated.nodejs.SqliteDbif.__commitTransaction,
-          rollback : liberated.nodejs.SqliteDbif.__rollbackTransaction
+          commit   : liberated.node.SqliteDbif.__commitTransaction,
+          rollback : liberated.node.SqliteDbif.__rollbackTransaction
         });
     },
     
@@ -944,7 +944,7 @@ qx.Class.define("liberated.nodejs.SqliteDbif",
       query = "COMMIT;";
       
       // Retrieve this thread's database connection
-      db = liberated.nodejs.SqliteDbif.__db;
+      db = liberated.node.SqliteDbif.__db;
 
       // Prepare and issue a query
       preparedQuery = db.prepare(query);
@@ -973,7 +973,7 @@ qx.Class.define("liberated.nodejs.SqliteDbif",
       query = "ROLLBACK;";
       
       // Retrieve this thread's database connection
-      db = liberated.nodejs.SqliteDbif.__db;
+      db = liberated.node.SqliteDbif.__db;
 
       // Prepare and issue a query
       preparedQuery = db.prepare(query);

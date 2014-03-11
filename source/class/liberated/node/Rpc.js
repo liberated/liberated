@@ -19,7 +19,7 @@
 /**
  * Handler for remote procedure calls.
  */
-qx.Class.define("liberated.nodejs.Rpc",
+qx.Class.define("liberated.node.Rpc",
 {
   extend : liberated.AbstractRpcHandler
   
