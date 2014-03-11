@@ -10,7 +10,7 @@
  * This code relies on http://github.grumdrig.com/node-sqlite/
  */
 
-qx.Class.define("liberated.node.SqliteDbif",
+qx.Class.define("liberated.node.SqliteSyncDbif",
 {
   extend  : qx.core.Object,
   type    : "abstract",
