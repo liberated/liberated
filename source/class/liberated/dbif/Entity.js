@@ -715,6 +715,24 @@ qx.Class.define("liberated.dbif.Entity",
       var             transaction;
       var             result;
       
+      // Find the fDone function if not all arguments were provided
+      switch(arguments.length)
+      {
+      case 2 :
+        fDone = args;
+        break;
+
+      case 3 :
+        fDone = context;
+        break;
+        
+      case 4 :
+        break;
+        
+      default :
+        throw new Error("asTransaction() missing required arguments");
+      }
+
       // If no arguments were provided...
       if (typeof args == "undefined")
       {
