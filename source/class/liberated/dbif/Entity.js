@@ -750,7 +750,7 @@ qx.Class.define("liberated.dbif.Entity",
                 // ... let 'em know about it
                 if (typeof console != "undefined" && console.log)
                 {
-                  console.log("Database Write error: " + e + "\n" + e.stack);
+                  console.log("Database Write error");
                 }
 
                 // Roll back the transaction
