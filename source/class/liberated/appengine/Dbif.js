@@ -81,11 +81,12 @@ qx.Class.define("liberated.appengine.Dbif",
      * @param criteria
      *   See {@link liberated.dbif.Entity#query} for details.
      *
-     * @return {Array}
-     *   An array of maps, i.e. native objects (not of Entity objects!)
-     *   containing the data resulting from the query.
+     * @param fDone {Function}
+     *   Function called when the results of the query are available. The
+     *   argument will be an array of maps, i.e. native objects (not of Entity
+     *   objects!)  containing the data resulting from the query.
      */
-    query : function(classname, searchCriteria, resultCriteria)
+    query : function(classname, searchCriteria, resultCriteria, fDone)
     {
       var             i;
       var             Datastore;
@@ -366,7 +367,7 @@ qx.Class.define("liberated.appengine.Dbif",
       }
       
       // Give 'em the query results!
-      return results;
+      fDone(results);
     },
 
 
@@ -376,8 +377,11 @@ qx.Class.define("liberated.appengine.Dbif",
      *
      * @param entity {liberated.dbif.Entity}
      *   The entity to be made persistent.
+     * @param fDone {Function}
+     *   Function called when the operation has completed. There will be no
+     *   arguments to the function.
      */
-    put : function(entity)
+    put : function(entity, fDone)
     {
       var             dbKey;
       var             dbEntity;
@@ -581,6 +585,9 @@ qx.Class.define("liberated.appengine.Dbif",
 
       // Save it to the database
       datastoreService.put(dbEntity);
+      
+      // Let 'em know the operation has completed
+      fDone();
     },
     
 
@@ -589,8 +596,12 @@ qx.Class.define("liberated.appengine.Dbif",
      *
      * @param entity {liberated.dbif.Entity}
      *   An instance of the entity to be removed.
+     *
+     * @param fDone {Function}
+     *   Function called when the operation has completed. There will be no
+     *   arguments to the function.
      */
-    remove : function(entity)
+    remove : function(entity, fDone)
     {
       var             entityData = entity.getData();
       var             keyProperty = entity.getEntityKeyProperty();
@@ -628,6 +639,9 @@ qx.Class.define("liberated.appengine.Dbif",
       // Remove this entity from the database
       datastore = Datastore.DatastoreServiceFactory.getDatastoreService();
       datastore["delete"](dbKey);
+      
+      // Let 'em know the operation has completed
+      fDone();
     },
     
     /**
@@ -642,14 +656,16 @@ qx.Class.define("liberated.appengine.Dbif",
      * @param filename {String?}
      *   The filename for this blob.
      *
-     * @return {String}
-     *   The blob ID of the just-added blob
-     *
+     * @param fDone {Function}
+     *   Function called when the operation has completed. The function will
+     *   be called with a single argument, the Blob ID (of type String) of the
+     *   just-added blob.
+     * 
      * @throws {Error}
      *   If an error occurs while writing the blob to the database, an Error
      *   is thrown.
      */
-    putBlob : function(blobData, contentType, filename)
+    putBlob : function(blobData, contentType, filename, fDone)
     {
       var             key;
       var             file;
@@ -700,7 +716,7 @@ qx.Class.define("liberated.appengine.Dbif",
       key = fileService.getBlobKey(file).getKeyString();
       
       // Give 'em the blob id
-      return String(key);
+      fDone(String(key));
     },
     
     /**
@@ -708,12 +724,14 @@ qx.Class.define("liberated.appengine.Dbif",
      *
      * @param blobId {Key}
      *   The blob ID of the blob to be retrieved
-     * 
-     * @return {LongString}
-     *   The blob data retrieved from the database. If there is no blob with
-     *   the given ID, undefined is returned.
+     *
+     * @param fDone {Function}
+     *   Function called when the operation has completed. The function will
+     *   be called with a single argument, the blob data (of type LongString)
+     *   retrieved from the database. If there is no blob with the given ID,
+     *   undefined is given.
      */
-    getBlob : function(blobId)
+    getBlob : function(blobId, fDone)
     {
       var             blob;
       var             blobstoreService;
@@ -777,7 +795,7 @@ qx.Class.define("liberated.appengine.Dbif",
       blob = blob.join("");
       
       // Give 'em what they came for
-      return blob;
+      fDone(blob);
     },
     
     /**
@@ -786,8 +804,12 @@ qx.Class.define("liberated.appengine.Dbif",
      * @param blobId {Key}
      *   The blob ID of the blob to be removed. If the specified blob id does
      *   not exist, this request fails silently.
+     *
+     * @param fDone {Function}
+     *   Function called when the operation has completed. The function will
+     *   be called with no arguments.
      */
-    removeBlob : function(blobId)
+    removeBlob : function(blobId, fDone)
     {
       var             blobstoreService;
       var             blobKey;
@@ -806,26 +828,53 @@ qx.Class.define("liberated.appengine.Dbif",
 
       // Delete the blob
       blobstoreService["delete"](blobKey);
+      
+      // Let 'em know the operation has completed
+      fDone();
     },
     
     
     /**
      * Begin a transaction.
      *
-     * @return {Object}
-     *   A transaction object. It has commit() and rollback() methods.
+     * @param fDone {Function}
+     *   Function called when the operation has completed. The function will
+     *   be called with a transaction object which contains commit() and
+     *   rollback() methods which each receive a single parameter, fDone,
+     *   which is to be a function to be called when the commit or rollback
+     *   operation has completed.
      */
-    beginTransaction : function()
+    beginTransaction : function(fDone)
     {
       var             datastoreService;
       var             Datastore;
+      var             transaction;
+      var             retval;
 
       // Gain access to the datastore service
       Datastore = Packages.com.google.appengine.api.datastore;
       datastoreService = 
         Datastore.DatastoreServiceFactory.getDatastoreService();
 
-      return datastoreService.beginTransaction();
+      transaction = datastoreService.beginTransaction();
+
+      retval =
+        {
+          commit : function(fDone)
+          {
+            transaction.commit();
+            fDone();
+          },
+          
+          rollback : function(fDone)
+          {
+            transaction.rollback();
+            fDone();
+          }
+        };
+      
+      // Let 'em know the operation has completed
+      fDone(retval);
     },
 
 

@@ -499,12 +499,12 @@ qx.Class.define("liberated.dbif.Entity",
      *     { type : "option", name  : "stripCanon", value : true }
      *   ]
      *
-     *
-     * @return {Array}
-     *   An array of maps, i.e. native objects (not of Entity objects!)
-     *   containing the data resulting from the query.
+     * @param fDone {Function}
+     *   Function called when the results of the query are available. The
+     *   argument will be an array of maps, i.e. native objects (not of Entity
+     *   objects!)  containing the data resulting from the query.
      */
-    query : function(classname, searchCriteria, resultCriteria)
+    query : function(classname, searchCriteria, resultCriteria, fDone)
     {
       var             ret;
       var             entityType;
@@ -573,11 +573,6 @@ qx.Class.define("liberated.dbif.Entity",
          })(searchCriteria);
       }
 
-      // Issue the query
-      ret = liberated.dbif.Entity.__query(classname, 
-                                          searchCriteria, 
-                                          resultCriteria);
-      
       // Match options
       if (resultCriteria)
       {
@@ -591,7 +586,7 @@ qx.Class.define("liberated.dbif.Entity",
               case "stripCanon": // strip canonical fields from result
                 bStripCanon = criterion.value;
                 break;
-                
+
               default:
                 this.warn("Unrecognized option name: " + criterion.name);
                 break;
@@ -599,25 +594,34 @@ qx.Class.define("liberated.dbif.Entity",
             }
           });
       }
-      
 
-      // If there is a canonicalization map...
-      if (bStripCanon && canonicalize)
-      {
-        // ... then for each entry in the canonicalization map, ...
-        canonFields.forEach(
-          function(field)
+      // Issue the query
+      liberated.dbif.Entity.__query(
+        classname,
+        searchCriteria,
+        resultCriteria,
+        function(ret)
+        {
+          // If there is a canonicalization map...
+          if (bStripCanon && canonicalize)
           {
-            // ... delete the corresponding canonical field from the return map
-            ret.forEach(
-              function(item)
+            // ... then for each entry in the canonicalization map, ...
+            canonFields.forEach(
+              function(field)
               {
-                delete item[canonicalize[field].prop];
+                // ... delete the corresponding canonical field from the
+                // return map
+                ret.forEach(
+                  function(item)
+                  {
+                    delete item[canonicalize[field].prop];
+                  });
               });
-          });
-      }
+          }
 
-      return ret;
+          // Give 'em the results fo the query
+          fDone(ret);
+        });
     },
 
 
@@ -630,13 +634,13 @@ qx.Class.define("liberated.dbif.Entity",
      * 
      * See query() documentation for details.
      */
-    __query : function(classname, searchCriteria, resultCriteria)
+    __query : function(classname, searchCriteria, resultCriteria, fDone)
     {
       // This is a temporary place holder.
       // 
       // This method is replaced by the query method of the specific database
       // that is being used.
-      return [];
+      fDone([]);
     },
     
 
@@ -648,8 +652,12 @@ qx.Class.define("liberated.dbif.Entity",
      *
      * @param entity {liberated.dbif.Entity}
      *   The object whose database properties are to be written out.
+     *
+     * @param fDone {Function}
+     *   Function called when the operation has completed. There will be no
+     *   arguments to the function.
      */
-    __put : function(entity)
+    __put : function(entity, fDone)
     {
       // This is a temporary place holder.
       // 
@@ -666,8 +674,12 @@ qx.Class.define("liberated.dbif.Entity",
      *
      * @return {Object}
      *   A transaction object. It has commit() and rollback() methods.
+     *
+     * @param fDone {Function}
+     *   Function called when the operation has completed. There will be no
+     *   arguments to the function.
      */
-    __beginTransaction : function(entity)
+    __beginTransaction : function(entity, fDone)
     {
       // This is a temporary place holder.
       // 
@@ -682,16 +694,22 @@ qx.Class.define("liberated.dbif.Entity",
      * request. It also retries a specified number of times, if the commit
      * fails.
      *
-     * @param func {Function}
-     *   The function to be run in the transaction
+     * @param fTransaction {Function}
+     *   The function to be run in the transaction. The function takes two
+     *   arguments: the argument array provided to asTransaction(), and a
+     *   function to be called when the transaction function completes.
      * 
      * @param args {Array?}
      *   Additional arguments are passed to the specified function.
      * 
      * @param context {Object?}
      *   Context in which the specified function should be called
+     *
+     * @param fDone {Function}
+     *   Function called when the operation has completed. There will be no
+     *   arguments to the function.
      */
-    asTransaction : function(func, args, context)
+    asTransaction : function(fTransaction, args, context, fDone)
     {
       var             i;
       var             transaction;
@@ -713,46 +731,41 @@ qx.Class.define("liberated.dbif.Entity",
       if (typeof context == "undefined")
       {
         // then provide one
-        context = func;
+        context = fTransaction;
       }
 
-      // Retry a number of times if commit fails
-      for (i = liberated.dbif.Entity.MAX_COMMIT_TRIES; i > 0; i--)
-      {
-        // Start a transaction
-        transaction = liberated.dbif.Entity.__beginTransaction();
-      
-        try
+      // Start a transaction
+      liberated.dbif.Entity.__beginTransaction(
+        function(transaction)
         {
           // Write the data
-          result = func.apply(context, args);
-          
-          // Commit the transaction
-          transaction.commit();
-          
-          // All done here. Don't loop again
-          break;
-        }
-        catch (e)
-        {
-          // An error occurred writing or commiting. Retry.
-          if (typeof console != "undefined" && console.log)
-          {
-            console.log("Database Write error: " + e + "\n" + e.stack);
-          }
+          fTransaction.apply(
+            context,
+            args,
+            function(results, bRollback)
+            {
+              // If they've requested that the transaction be rolled back...
+              if (bRollback)
+              {
+                // ... let 'em know about it
+                if (typeof console != "undefined" && console.log)
+                {
+                  console.log("Database Write error: " + e + "\n" + e.stack);
+                }
 
-          // Roll back the transaction
-          transaction.rollback();
-          
-          if (i == 1)
-          {
-            // Throw a new error for the user to handle
-            throw new Error("Database write error: " + e);
-          }
-        }
-      }
-      
-      return result;
+                // Roll back the transaction
+                transaction.rollback();
+              }
+              else
+              {
+                // otherwise, commit the transaction
+                transaction.commit();
+              }
+              
+              // Let 'em know the operation has completed
+              fDone();
+            });
+        });
     },
 
     /**
@@ -760,8 +773,12 @@ qx.Class.define("liberated.dbif.Entity",
      *
      * @param entity {liberated.dbif.Entity}
      *   An instance of the entity to be removed.
+     *
+     * @param fDone {Function}
+     *   Function called when the operation has completed. There will be no
+     *   arguments to the function.
      */
-    __remove : function(entity)
+    __remove : function(entity, fDone)
     {
       // This is a temporary place holder.
       // 
@@ -791,7 +808,7 @@ qx.Class.define("liberated.dbif.Entity",
      *   If an error occurs while writing the blob to the database, an Error
      *   is thrown.
      */
-    putBlob : function(blobData, contentType, filename)
+    putBlob : function(blobData, contentType, filename, fDone)
     {
       // This is a temporary place holder.
       // 
@@ -810,7 +827,7 @@ qx.Class.define("liberated.dbif.Entity",
      *   The blob data retrieved from the database. If there is no blob with
      *   the given ID, undefined is returned.
      */
-    getBlob : function(blobId)
+    getBlob : function(blobId, fDone)
     {
       // This is a temporary place holder.
       // 
@@ -826,7 +843,7 @@ qx.Class.define("liberated.dbif.Entity",
      *   The blob ID of the blob to be removed. If the specified blob id does
      *   not exist, this request fails silently.
      */
-    removeBlob : function(blobId)
+    removeBlob : function(blobId, fDone)
     {
       // This is a temporary place holder.
       // 

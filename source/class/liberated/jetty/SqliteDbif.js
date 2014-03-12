@@ -228,11 +228,12 @@ qx.Class.define("liberated.jetty.SqliteDbif",
      * @param criteria {Map}
      *   See {@link liberated.dbif.Entity#query} for details.
      *
-     * @return {Array}
-     *   An array of maps, i.e. native objects (not of Entity objects!)
-     *   containing the data resulting from the query.
+     * @param fDone {Function}
+     *   Function called when the results of the query are available. The
+     *   argument will be an array of maps, i.e. native objects (not of Entity
+     *   objects!)  containing the data resulting from the query.
      */
-    query : function(classname, searchCriteria, resultCriteria)
+    query : function(classname, searchCriteria, resultCriteria, fDone)
     {
       var             i;
       var             db;
@@ -517,7 +518,7 @@ qx.Class.define("liberated.jetty.SqliteDbif",
         });
       
       // Give 'em the query results!
-      return results;
+      fDone(results);
     },
 
 
@@ -527,8 +528,12 @@ qx.Class.define("liberated.jetty.SqliteDbif",
      *
      * @param entity {liberated.dbif.Entity}
      *   The entity to be made persistent.
+     *
+     * @param fDone {Function}
+     *   Function called when the operation has completed. There will be no
+     *   arguments to the function.
      */
-    put : function(entity)
+    put : function(entity, fDone)
     {
       var             i;
       var             db;
@@ -632,6 +637,9 @@ qx.Class.define("liberated.jetty.SqliteDbif",
         // Clean up
         preparedQuery.dispose();
       }
+      
+      // Let 'em know the operation has completed
+      fDone();
     },
     
 
@@ -640,8 +648,12 @@ qx.Class.define("liberated.jetty.SqliteDbif",
      *
      * @param entity {liberated.dbif.Entity}
      *   An instance of the entity to be removed.
+     *
+     * @param fDone {Function}
+     *   Function called when the operation has completed. There will be no
+     *   arguments to the function.
      */
-    remove : function(entity)
+    remove : function(entity, fDone)
     {
       var             db;
       var             entityData = entity.getData();
@@ -710,6 +722,9 @@ qx.Class.define("liberated.jetty.SqliteDbif",
         // Clean up
         preparedQuery.dispose();
       }
+      
+      // Let 'em know the operation has completed
+      fDone();
     },
     
     /**
@@ -724,14 +739,16 @@ qx.Class.define("liberated.jetty.SqliteDbif",
      * @param filename {String?}
      *   The filename for this blob.
      *
-     * @return {String}
-     *   The blob ID of the just-added blob
+     * @param fDone {Function}
+     *   Function called when the operation has completed. The function will
+     *   be called with a single argument, the Blob ID (of type String) of the
+     *   just-added blob.
      * 
      * @throws {Error}
      *   If an error occurs while writing the blob to the database, an Error
      *   is thrown.
      */
-    putBlob : function(blobData, contentType, filename)
+    putBlob : function(blobData, contentType, filename, fDone)
     {
       var             db;
       var             query;
@@ -798,7 +815,7 @@ qx.Class.define("liberated.jetty.SqliteDbif",
       }
 
       // Give 'em the blob id
-      return key;
+      fDone(key);
     },
     
     /**
@@ -806,12 +823,14 @@ qx.Class.define("liberated.jetty.SqliteDbif",
      *
      * @param blobId {Key}
      *   The blob ID of the blob to be retrieved
-     * 
-     * @return {LongString}
-     *   The blob data retrieved from the database. If there is no blob with
-     *   the given ID, undefined is returned.
+     *
+     * @param fDone {Function}
+     *   Function called when the operation has completed. The function will
+     *   be called with a single argument, the blob data (of type LongString)
+     *   retrieved from the database. If there is no blob with the given ID,
+     *   undefined is given.
      */
-    getBlob : function(blobId)
+    getBlob : function(blobId, fDone)
     {
       var             db;
       var             query;
@@ -860,7 +879,7 @@ qx.Class.define("liberated.jetty.SqliteDbif",
       }
       
       // Give 'em what they came for
-      return blob;
+      fDone(blob);
     },
     
     /**
@@ -869,11 +888,13 @@ qx.Class.define("liberated.jetty.SqliteDbif",
      *
      * @param blobId {Key}
      *   The blob ID of the blob to be retrieved
-     * 
-     * @return {Map}
-     *   A map containing two fields: contentType and filename.
+     *
+     * @param fDone {Function}
+     *   Function called when the operation has completed. The function will
+     *   be called with a single argument, a map containing two fields:
+     *   contentType and filename.
      */
-    getBlobInfo : function(blobId)
+    getBlobInfo : function(blobId, fDone)
     {
       var             db;
       var             query;
@@ -922,7 +943,7 @@ qx.Class.define("liberated.jetty.SqliteDbif",
       }
       
       // Give 'em what they came for
-      return retval;
+      fDone(retval);
     },
     
     /**
@@ -931,8 +952,12 @@ qx.Class.define("liberated.jetty.SqliteDbif",
      * @param blobId {Key}
      *   The blob ID of the blob to be removed. If the specified blob id does
      *   not exist, this request fails silently.
+     *
+     * @param fDone {Function}
+     *   Function called when the operation has completed. The function will
+     *   be called with no arguments.
      */
-    removeBlob : function(blobId)
+    removeBlob : function(blobId, fDone)
     {
       var             db;
       var             query;
@@ -974,16 +999,23 @@ qx.Class.define("liberated.jetty.SqliteDbif",
         // Clean up
         preparedQuery.dispose();
       }
+      
+      // Let 'em know the operation has completed
+      fDone();
     },
     
     
     /**
      * Begin a transaction.
      *
-     * @return {Object}
-     *   A transaction object. It has commit() and rollback() methods.
+     * @param fDone {Function}
+     *   Function called when the operation has completed. The function will
+     *   be called with a transaction object which contains commit() and
+     *   rollback() methods which each receive a single parameter, fDone,
+     *   which is to be a function to be called when the commit or rollback
+     *   operation has completed.
      */
-    beginTransaction : function()
+    beginTransaction : function(fDone)
     {
       var             db;
       var             query;
@@ -1008,7 +1040,8 @@ qx.Class.define("liberated.jetty.SqliteDbif",
         preparedQuery.dispose();
       }
 
-      return (
+      // Give 'em functions to call for commit and rollback
+      fDone(
         {
           commit   : liberated.jetty.SqliteDbif.__commitTransaction,
           rollback : liberated.jetty.SqliteDbif.__rollbackTransaction
@@ -1017,8 +1050,12 @@ qx.Class.define("liberated.jetty.SqliteDbif",
     
     /**
      * Commit an open transaction
+     *
+     * @param fDone {Function}
+     *   Function called when the operation has completed. The function will
+     *   be called with no arguments
      */
-    __commitTransaction : function()
+    __commitTransaction : function(fDone)
     {
       var             db;
       var             query;
@@ -1042,12 +1079,19 @@ qx.Class.define("liberated.jetty.SqliteDbif",
         // Clean up
         preparedQuery.dispose();
       }
+      
+      // Let 'em know the operation has completed
+      fDone();
     },
     
     /**
      * Roll back an open transaction
+     *
+     * @param fDone {Function}
+     *   Function called when the operation has completed. The function will
+     *   be called with no arguments
      */
-    __rollbackTransaction : function()
+    __rollbackTransaction : function(fDone)
     {
       var             db;
       var             query;
@@ -1071,6 +1115,9 @@ qx.Class.define("liberated.jetty.SqliteDbif",
         // Clean up
         preparedQuery.dispose();
       }
+      
+      // Let 'em know the operation has completed
+      fDone();
     }
   }
 });
