@@ -60,7 +60,7 @@ qx.Class.define("liberated.node.SqliteSyncDbif",
       // Open the database
       sqlite = require("sqlite");
       db = sqlite.openDatabaseSync(databaseName);
-      liberated.node.SqliteDbif.__db = db;
+      liberated.node.SqliteSyncDbif.__db = db;
 
       // For each entity type...
       for (className in entityTypeMap)
@@ -152,11 +152,11 @@ qx.Class.define("liberated.node.SqliteSyncDbif",
       // Create the Blobs table
       query = [];
       query.push("CREATE TABLE IF NOT EXISTS");
-      query.push("\"" + liberated.node.SqliteDbif.BLOB_TABLE_NAME + "\"");
+      query.push("\"" + liberated.node.SqliteSyncDbif.BLOB_TABLE_NAME + "\"");
       query.push("(");
-      query.push(liberated.node.SqliteDbif.BLOB_KEY_NAME);
+      query.push(liberated.node.SqliteSyncDbif.BLOB_KEY_NAME);
       query.push("INTEGER PRIMARY KEY,");
-      query.push(liberated.node.SqliteDbif.BLOB_FIELD_NAME);
+      query.push(liberated.node.SqliteSyncDbif.BLOB_FIELD_NAME);
       query.push("BLOB,");
       query.push("contentType STRING,");
       query.push("filename STRING");
@@ -373,7 +373,7 @@ qx.Class.define("liberated.node.SqliteSyncDbif",
       }
       
       // Retrieve this thread's database connection
-      db = liberated.node.SqliteDbif.__db;
+      db = liberated.node.SqliteSyncDbif.__db;
 
       // Prepare and issue a query
       preparedQuery = db.prepare(query);
@@ -545,7 +545,7 @@ qx.Class.define("liberated.node.SqliteSyncDbif",
       query.push(");");
 
       // Retrieve this thread's database connection
-      db = liberated.node.SqliteDbif.__db;
+      db = liberated.node.SqliteSyncDbif.__db;
 
       // Prepare and issue a query
       preparedQuery = db.prepare(query.join(" "));
@@ -623,7 +623,7 @@ qx.Class.define("liberated.node.SqliteSyncDbif",
       }
 
       // Retrieve this thread's database connection
-      db = liberated.node.SqliteDbif.__db;
+      db = liberated.node.SqliteSyncDbif.__db;
 
       // Prepare and issue a query
       preparedQuery = db.prepare(query.join(" "));
@@ -690,12 +690,12 @@ qx.Class.define("liberated.node.SqliteSyncDbif",
       query =
         [
           "INSERT INTO",
-          liberated.node.SqliteDbif.BLOB_TABLE_NAME,
+          liberated.node.SqliteSyncDbif.BLOB_TABLE_NAME,
           "VALUES (?1, ?2, ?3);"
         ].join(" ");
       
       // Retrieve this thread's database connection
-      db = liberated.node.SqliteDbif.__db;
+      db = liberated.node.SqliteSyncDbif.__db;
 
       // Prepare and issue a query
       preparedQuery = db.prepare(query);
@@ -750,16 +750,16 @@ qx.Class.define("liberated.node.SqliteSyncDbif",
       query =
         [
           "SELECT",
-          liberated.node.SqliteDbif.BLOB_FIELD_NAME,
+          liberated.node.SqliteSyncDbif.BLOB_FIELD_NAME,
           "FROM",
-          liberated.node.SqliteDbif.BLOB_TABLE_NAME,
+          liberated.node.SqliteSyncDbif.BLOB_TABLE_NAME,
           "WHERE",
-          liberated.node.SqliteDbif.BLOB_KEY_NAME,
+          liberated.node.SqliteSyncDbif.BLOB_KEY_NAME,
           "= ?1;"
         ].join(" ");
       
       // Retrieve this thread's database connection
-      db = liberated.node.SqliteDbif.__db;
+      db = liberated.node.SqliteSyncDbif.__db;
 
       // Prepare and issue a query
       preparedQuery = db.prepare(query);
@@ -775,7 +775,7 @@ qx.Class.define("liberated.node.SqliteSyncDbif",
         if (row)
         {
           // ... then retrieve the blob data
-          blob = blob[liberated.node.SqliteDbif.BLOB_FIELD_NAME];
+          blob = blob[liberated.node.SqliteSyncDbif.BLOB_FIELD_NAME];
         }
       }
       finally
@@ -811,14 +811,14 @@ qx.Class.define("liberated.node.SqliteSyncDbif",
         [
           "SELECT contentType, filename",
           "FROM",
-          liberated.node.SqliteDbif.BLOB_TABLE_NAME,
+          liberated.node.SqliteSyncDbif.BLOB_TABLE_NAME,
           "WHERE",
-          liberated.node.SqliteDbif.BLOB_KEY_NAME,
+          liberated.node.SqliteSyncDbif.BLOB_KEY_NAME,
           "= ?1;"
         ].join(" ");
       
       // Retrieve this thread's database connection
-      db = liberated.node.SqliteDbif.__db;
+      db = liberated.node.SqliteSyncDbif.__db;
 
       // Prepare and issue a query
       preparedQuery = db.prepare(query);
@@ -866,14 +866,14 @@ qx.Class.define("liberated.node.SqliteSyncDbif",
       query =
         [
           "DELETE FROM",
-          liberated.node.SqliteDbif.BLOB_TABLE_NAME,
+          liberated.node.SqliteSyncDbif.BLOB_TABLE_NAME,
           "WHERE",
-          liberated.node.SqliteDbif.BLOB_FIELD_NAME,
+          liberated.node.SqliteSyncDbif.BLOB_FIELD_NAME,
           "= ?1;"
         ].join(" ");
       
       // Retrieve this thread's database connection
-      db = liberated.node.SqliteDbif.__db;
+      db = liberated.node.SqliteSyncDbif.__db;
 
       // Prepare and issue a query
       preparedQuery = db.prepare(query);
@@ -909,7 +909,7 @@ qx.Class.define("liberated.node.SqliteSyncDbif",
       query = "BEGIN;";
       
       // Retrieve this thread's database connection
-      db = liberated.node.SqliteDbif.__db;
+      db = liberated.node.SqliteSyncDbif.__db;
 
       // Prepare and issue a query
       preparedQuery = db.prepare(query);
@@ -926,8 +926,8 @@ qx.Class.define("liberated.node.SqliteSyncDbif",
 
       return (
         {
-          commit   : liberated.node.SqliteDbif.__commitTransaction,
-          rollback : liberated.node.SqliteDbif.__rollbackTransaction
+          commit   : liberated.node.SqliteSyncDbif.__commitTransaction,
+          rollback : liberated.node.SqliteSyncDbif.__rollbackTransaction
         });
     },
     
@@ -944,7 +944,7 @@ qx.Class.define("liberated.node.SqliteSyncDbif",
       query = "COMMIT;";
       
       // Retrieve this thread's database connection
-      db = liberated.node.SqliteDbif.__db;
+      db = liberated.node.SqliteSyncDbif.__db;
 
       // Prepare and issue a query
       preparedQuery = db.prepare(query);
@@ -973,7 +973,7 @@ qx.Class.define("liberated.node.SqliteSyncDbif",
       query = "ROLLBACK;";
       
       // Retrieve this thread's database connection
-      db = liberated.node.SqliteDbif.__db;
+      db = liberated.node.SqliteSyncDbif.__db;
 
       // Prepare and issue a query
       preparedQuery = db.prepare(query);
