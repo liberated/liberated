@@ -36,11 +36,17 @@ qx.Class.define("liberated.rpc.Server",
    *   the function is not permitted to be used in that fashion), the provided
    *   error object's methods should be used to provide details of the error,
    *   and then the error object should be returned.
+   *
+   * @param dbif {qx.core.Object}
+   *   The environment-specific Dbif object for the current request.
    */
-  construct : function(serviceFactory)
+  construct : function(serviceFactory, dbif)
   {
     // Call the superclass constructor
     this.base(arguments);
+
+    // Save the dbif so that the service factory can be called in its context
+    this.__dbif = dbif;
 
     // The service factory is mandatory
     if (! qx.lang.Type.isFunction(serviceFactory))
@@ -73,6 +79,8 @@ qx.Class.define("liberated.rpc.Server",
 
   members :
   {
+    __dbif : null,
+
     /**
      * Process a single remote procedure call request.
      *
@@ -343,7 +351,8 @@ qx.Class.define("liberated.rpc.Server",
           // Use the registered callback to get a service function associated
           // with this method name.
           error = new liberated.rpc.error.Error("2.0");
-          service = this.getServiceFactory()(fqMethod, "2.0", error);
+          service = 
+            this.getServiceFactory().call(this.__dbif, fqMethod, "2.0", error);
 
           // Was there an error?
           if (service == null)

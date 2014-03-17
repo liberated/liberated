@@ -26,55 +26,46 @@ qx.Class.define("liberated.AbstractRpcHandler",
   /**
    * Base constructor for each RPC handler.
    */
-  construct : function()
+  construct : function(path, dbif)
   {
-    var             i;
-    var             services = {};
-    var             part;
-
     // Call the superclass constructor
     this.base(arguments);
 
-    // Initialize the services
-    liberated.AbstractRpcHandler._services = services;
-    
+    // Save the dbif object so we know who the user is
+    this.__dbif = dbif;
+
     // Get an RPC Server instance.
     this.__rpcServer = new liberated.rpc.Server(
-      liberated.AbstractRpcHandler._serviceFactory);
+      liberated.AbstractRpcHandler._serviceFactory, dbif);
   },
   
   statics :
   {
     /** The services map */
-    _services : null,
+    _services : {},
     
-    /**
-     *  Function to call for authorization to run the service method. If
-     *  null, no authorization is required. Otherwise this should be a
-     *  function which takes as a parameter, the fully-qualified name of the
-     *  method to be called, and must return true to allow the function to be
-     *  called, or false otherwise, to indicate permission denied.
-     */
-    authorizationFunction : null,
-
     /**
      * The service factory takes a method name and attempts to produce a
      * service method that corresponds to that name. This implementation
      * concatenates the method name to the name of the variable holding
      * the service map, and looks for a corresponding method.
-     * 
+     *
      * @param fqMethodName {String}
      *   The fully-qualified name of the method to be called.
-     * 
+     *
      * @param protocol {String}
      *   The JSON-RPC protocol being used ("2.0")
-     * 
+     *
      * @param error {liberated.rpc.error.Error}
      *   An error object to be set if an error is encountered in 
      *   instantiating the requested service method.
-     * 
+     *
      * @return {Function}
      *   The service method associated with the specified method name.
+     *
+     * @NOTE
+     *   This function must be called in the context of a specific request's
+     *   dbif instance.
      */
     _serviceFactory : function(fqMethodName, protocol, error)
     {
@@ -102,9 +93,12 @@ qx.Class.define("liberated.AbstractRpcHandler",
         return null;
       }
 
-      // Validate allowability of calling this function
-      if (liberated.AbstractRpcHandler.authorizationFunction &&
-          !liberated.AbstractRpcHandler.authorizationFunction(fqMethodName))
+      // Validate allowability of calling this function.
+      //
+      // NOTE: This function is called in the context of the specific
+      // request's dbif object. We can therefore call the authorize function
+      // via our own context.
+      if (this.authorize && ! this.authorize(fqMethodName))
       {
         // Permission denied
         error.setCode(qx.io.remote.RpcError.v2.error.PermissionDenied);
@@ -244,6 +238,8 @@ qx.Class.define("liberated.AbstractRpcHandler",
   
   members :
   {
+    __dbif : null,
+
     /**
      * Register a service name and function. This is just a convenience member
      * method that calls the static function of the same name.
