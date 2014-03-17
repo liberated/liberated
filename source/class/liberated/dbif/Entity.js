@@ -235,6 +235,8 @@ qx.Class.define("liberated.dbif.Entity",
     /** Assignment of property types for each entity class */
     propertyTypes : {},
 
+    /** Custom, database driver-specific features */
+    custom : null,
 
     /**
      * Register an entity type. This is called by each subclass, immediately
