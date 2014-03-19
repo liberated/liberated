@@ -26,11 +26,14 @@ qx.Class.define("liberated.node.System",
      *
      * @return {String}
      *   The data read from the file.
+     * 
+     * @ignore(require)
      */
     readFile : function(filename, options)
     {
       var             fs = require("fs");
       var             sync = require("synchronize");
+      var             retval;
 
       // If no options were specified...
       if (! options)
@@ -42,8 +45,14 @@ qx.Class.define("liberated.node.System",
       // Set default options
       options.encoding = options.encoding || "utf8";
 
-      // Give 'em the file data!
-      return sync.await(fs.readFile(filename, options, sync.defer()));
+      // Read the file data
+      retval = sync.await(fs.readFile(filename, options, sync.defer()));
+      
+      // Convert it from "buffer" format into a string
+      retval = retval.toString();
+      
+      // Give it to 'em!
+      return retval;
     },
 
 
@@ -68,6 +77,8 @@ qx.Class.define("liberated.node.System",
      *     flag {String}
      *       The method of writing to the file, "w" to truncate then write;
      *       "a" to append. (default: "w")
+     * 
+     * @ignore(require)
      */
     writeFile : function(filename, data, options)
     {
@@ -101,6 +112,7 @@ qx.Class.define("liberated.node.System",
      * @return {Boolean}
      *   true if the file exists; false otherwise.
      *
+     * @ignore(require)
      */
     fileExists : function(filename)
     {
@@ -120,6 +132,8 @@ qx.Class.define("liberated.node.System",
      *
      * @param newName {String}
      *   The name to move the file to.
+     * 
+     * @ignore(require)
      */
     rename : function(oldName, newName)
     {
@@ -143,13 +157,15 @@ qx.Class.define("liberated.node.System",
     /**
      * Read a directory and retrieve its constituent files/directories
      *
-     * @param directory
+     * @param directory {String}
      *   The name of the directory to be read
      *
      * @return {Array|null}
      *   If the specified directory name exists and is a directory, the
      *   returned array will be the list of files and directories found
      *   therein. Otherwise, null is returned.
+     * 
+     * @ignore(require)
      */
     readdir : function(directory)
     {
@@ -202,11 +218,16 @@ qx.Class.define("liberated.node.System",
      *       The standard error output of the program. This may be undefined
      *       or null if exitCode was non-zero.
      *
+     * @ignore(require)
+     * @ignore(sync.await)
+     * @ignore(sync.defer)
      */
     system : function(cmd, options)
     {
-      var             exec = require("child_process");
       var             retval;
+      var             localOptions = {};
+      var             exec = require("child_process").exec;
+      var             sync = require("synchronize");
 
       // Create a function in the standard async format
       function doExec(cmd, options, callback)
@@ -216,7 +237,6 @@ qx.Class.define("liberated.node.System",
         child = exec(
           cmd,
           options,
-          directory,
           function(err, stdout, stderr)
           {
             callback(null, 
@@ -235,11 +255,34 @@ qx.Class.define("liberated.node.System",
         options = {};
       }
 
+      // Convert the command from array to quoted strings
+      cmd =
+        cmd.map(
+          function(arg)
+          {
+            return '"' + arg + '"';
+          }).join(" ");
+
+      console.log("System.system: cmd=" + JSON.stringify(cmd) + 
+                  ", options=" + JSON.stringify(options));
+
+      // Save the local options, and strip them from the options map to be
+      // passed to exec
+      [
+        "showStdout"
+      ].forEach(
+        function(opt)
+        {
+          localOptions[opt] = options[opt];
+          delete options[opt];
+        });
+
       // Run the command
       retval = sync.await(doExec(cmd, options, sync.defer()));
-      
+      console.log("(system() command exit code: " + retval.exitCode + ")");
+
       // If we were asked to display stdout...
-      if (options.showStdout)
+      if (localOptions.showStdout)
       {
         console.log(retval.stdout);
       }
