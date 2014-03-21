@@ -261,7 +261,7 @@ qx.Class.define("liberated.node.System",
         cmd.map(
           function(arg)
           {
-            return "'" + arg + "'";
+            return "'" + arg.replace("'", "\\'") + "'";
           }).join(" ");
 
       console.log("System.system: cmd=" + JSON.stringify(cmd) + 
