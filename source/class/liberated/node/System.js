@@ -143,6 +143,7 @@ qx.Class.define("liberated.node.System",
       // Rename the file!
       try
       {
+        console.log("Rename '" + oldName + "' to '" + newName + "'");
         sync.await(fs.rename(oldName, newName, sync.defer()));
         return true;
       }
@@ -260,11 +261,14 @@ qx.Class.define("liberated.node.System",
         cmd.map(
           function(arg)
           {
-            return '"' + arg + '"';
+            return "'" + arg + "'";
           }).join(" ");
 
       console.log("System.system: cmd=" + JSON.stringify(cmd) + 
                   ", options=" + JSON.stringify(options));
+
+      // Set default local options
+      localOptions.showStderr = true;
 
       // Save the local options, and strip them from the options map to be
       // passed to exec
@@ -282,9 +286,14 @@ qx.Class.define("liberated.node.System",
       console.log("(system() command exit code: " + retval.exitCode + ")");
 
       // If we were asked to display stdout...
-      if (localOptions.showStdout)
+      if (localOptions.showStdout && retval.stdout.toString().length > 0)
       {
-        console.log(retval.stdout);
+        console.log("STDOUT: " + retval.stdout);
+      }
+
+      if (localOptions.showStderr && retval.stderr.toString().length > 0)
+      {
+        console.log("STDERR: " + retval.stderr);
       }
 
       // Return the map with exitCode and, if exitCode != 0, stdout and stderr
