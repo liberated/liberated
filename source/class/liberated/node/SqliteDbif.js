@@ -80,7 +80,7 @@ qx.Class.define("liberated.node.SqliteDbif",
       db.run(
         sql,
         params,
-        function(err, lastID)
+        function(err)
         {
           if (err)
           {
@@ -88,8 +88,8 @@ qx.Class.define("liberated.node.SqliteDbif",
             return;
           }
 
-          // The prepare succeeded. Give 'em the last isnert rowid
-          callback(null, lastID);
+          // The prepare succeeded. Give 'em the last insert rowid
+          callback(null, this.lastID);
         });
     },
 
@@ -580,8 +580,8 @@ qx.Class.define("liberated.node.SqliteDbif",
           params.push(entityData[fieldName]);
           break;
         }
-
       }
+
       query.push(");");
 
       // Create the full query now
@@ -593,11 +593,12 @@ qx.Class.define("liberated.node.SqliteDbif",
       // Execute the query synchronously
       key = sync.await(This.insert(db, query, params, sync.defer()));
 
-      // If the key is auto-generated...
-      if (keyProperty == "uid")
+      // If the key value is auto-generated...
+      if (keyProperty == "uid" ||
+          (qx.lang.Type.getClass(keyProperty) != "Array" &&
+           entityData[keyProperty] === null))
       {
-        // ... then add it to the entity
-        entityData[fieldName] = key;
+        entityData[keyProperty] = key;
       }
     },
     
