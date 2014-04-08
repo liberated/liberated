@@ -225,18 +225,20 @@ qx.Class.define("liberated.node.System",
      */
     system : function(cmd, options)
     {
+      var             args;
       var             retval;
       var             localOptions = {};
-      var             exec = require("child_process").exec;
+      var             execFile = require("child_process").execFile;
       var             sync = require("synchronize");
 
       // Create a function in the standard async format
-      function doExec(cmd, options, callback)
+      function doExec(cmd, args, options, callback)
       {
         var             child;
 
-        child = exec(
+        child = execFile(
           cmd,
+          args,
           options,
           function(err, stdout, stderr)
           {
@@ -256,15 +258,12 @@ qx.Class.define("liberated.node.System",
         options = {};
       }
 
-      // Convert the command from array to quoted strings
-      cmd =
-        cmd.map(
-          function(arg)
-          {
-            return "'" + arg.replace("'", "\\'") + "'";
-          }).join(" ");
+      // Separate the arguments from the command name
+      args = cmd.slice(1);
+      cmd = cmd[0];
 
-      console.log("System.system: cmd=" + JSON.stringify(cmd) + 
+      console.log("System.system: cmd=" + cmd +
+                  ", args=" + JSON.stringify(args) +
                   ", options=" + JSON.stringify(options));
 
       // Set default local options
@@ -282,7 +281,7 @@ qx.Class.define("liberated.node.System",
         });
 
       // Run the command
-      retval = sync.await(doExec(cmd, options, sync.defer()));
+      retval = sync.await(doExec(cmd, args, options, sync.defer()));
       console.log("(system() command exit code: " + retval.exitCode + ")");
 
       // If we were asked to display stdout...
