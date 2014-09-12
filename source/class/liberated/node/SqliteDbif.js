@@ -617,12 +617,12 @@ qx.Class.define("liberated.node.SqliteDbif",
       var             type = entity.getEntityType();
       var             propertyName;
       var             query;
-      var             params;
+      var             params = [];
       var             preparedQuery;
       var             sync = require("synchronize");
       
       query = [];
-      query.push("DELETE FROM");
+      query.push("DELETE FROM ");
       query.push(type);
       query.push(" WHERE ");
 
@@ -649,6 +649,11 @@ qx.Class.define("liberated.node.SqliteDbif",
         query.push("= ?1");
         params.push(entityData[keyProperty]);
       }
+
+      query.push(";");
+
+      // Create the full query now
+      query = query.join(" ");
 
       // Retrieve the database connection
       db = liberated.node.SqliteDbif.__db;
