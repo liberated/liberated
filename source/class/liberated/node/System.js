@@ -32,7 +32,7 @@ qx.Class.define("liberated.node.System",
     readFile : function(filename, options)
     {
       var             fs = require("fs");
-      var             sync = require("synchronize");
+      var             deasync = require("deasync");
       var             retval;
 
       // If no options were specified...
@@ -46,7 +46,7 @@ qx.Class.define("liberated.node.System",
       options.encoding = options.encoding || "utf8";
 
       // Read the file data
-      retval = sync.await(fs.readFile(filename, options, sync.defer()));
+      retval = deasync(fs.readFile)(filename, options);
       
       // Convert it from "buffer" format into a string
       retval = retval.toString();
@@ -83,7 +83,7 @@ qx.Class.define("liberated.node.System",
     writeFile : function(filename, data, options)
     {
       var             fs = require("fs");
-      var             sync = require("synchronize");
+      var             deasync = require("deasync");
 
       // If no options were specified...
       if (! options)
@@ -98,7 +98,7 @@ qx.Class.define("liberated.node.System",
       options.flag = options.flag || "w";
 
       // Write the file data!
-      sync.await(fs.writeFile(filename, data, options, sync.defer()));
+      deasync(fs.writeFile)(filename, data, options);
     },
 
 
@@ -117,10 +117,10 @@ qx.Class.define("liberated.node.System",
     fileExists : function(filename)
     {
       var             fs = require("fs");
-      var             sync = require("synchronize");
+      var             deasync = require("deasync");
 
       // Determine if the file exist!
-      return sync.await(fs.exists(filename, sync.defer()));
+      return deasync(fs.exists)(filename);
     },
 
 
@@ -138,13 +138,13 @@ qx.Class.define("liberated.node.System",
     rename : function(oldName, newName)
     {
       var             fs = require("fs");
-      var             sync = require("synchronize");
+      var             deasync = require("deasync");
 
       // Rename the file!
       try
       {
         console.log("Rename '" + oldName + "' to '" + newName + "'");
-        sync.await(fs.rename(oldName, newName, sync.defer()));
+        deasync(fs.rename)(oldName, newName);
         return true;
       }
       catch(e)
@@ -172,11 +172,11 @@ qx.Class.define("liberated.node.System",
     {
       var             files;
       var             fs = require("fs");
-      var             sync = require("synchronize");
+      var             deasync = require("deasync");
 
       try
       {
-        files = sync.await(fs.readdir(directory, sync.defer()));
+        files = deasync(fs.readdir)(directory);
       }
       catch(e)
       {
@@ -220,8 +220,6 @@ qx.Class.define("liberated.node.System",
      *       or null if exitCode was non-zero.
      *
      * @ignore(require)
-     * @ignore(sync.await)
-     * @ignore(sync.defer)
      */
     system : function(cmd, options)
     {
@@ -229,7 +227,7 @@ qx.Class.define("liberated.node.System",
       var             retval;
       var             localOptions = {};
       var             execFile = require("child_process").execFile;
-      var             sync = require("synchronize");
+      var             deasync = require("deasync");
 
       // Create a function in the standard async format
       function doExec(cmd, args, options, callback)
@@ -281,7 +279,7 @@ qx.Class.define("liberated.node.System",
         });
 
       // Run the command
-      retval = sync.await(doExec(cmd, args, options, sync.defer()));
+      retval = deasync(doExec)(cmd, args, options);
       console.log("(system() command exit code: " + retval.exitCode + ")");
 
       // If we were asked to display stdout...

@@ -106,7 +106,7 @@ qx.Class.define("liberated.node.SqliteDbif",
      * 
      * @ignore(require)
      * @ignore(sqlite3)
-     * @ignore(sync.*)
+     * @ignore(deasync)
      */
     init : function(databaseName)
     {
@@ -123,115 +123,110 @@ qx.Class.define("liberated.node.SqliteDbif",
       var             fieldList;
       var             keyList;
       var             preparedQuery;
-      var             sync = require("synchronize");
+      var             deasync = require("deasync");
       var             This = liberated.node.SqliteDbif;
 
       // Save the database name
       This.__databaseName = databaseName;
 
-      sync.fiber(
-        function()
+      // Gain access to the database
+      db = This.__db = deasync(This.openDatabase)(databaseName);
+
+      // For each entity type...
+      for (className in entityTypeMap)
+      {
+        type = liberated.dbif.Entity.entityTypeMap[className];
+        keyField = propertyTypes[type].keyField;
+        fields = propertyTypes[type].fields;
+
+        // Generate a query to create the tables if they doesn't exist
+        query = [];
+        query.push("CREATE TABLE IF NOT EXISTS");
+        query.push(type);
+        query.push("(");
+
+        // Add each of the fields
+        fieldList = [];
+        for (field in fields)
         {
-          // Gain access to the database
-          db = This.__db = 
-            sync.await(This.openDatabase(databaseName, sync.defer()));
+          var             fieldData = field + " ";
 
-          // For each entity type...
-          for (className in entityTypeMap)
+          switch(fields[field])
           {
-            type = liberated.dbif.Entity.entityTypeMap[className];
-            keyField = propertyTypes[type].keyField;
-            fields = propertyTypes[type].fields;
+          case "String":
+          case "LongString":
+          case "KeyArray":
+          case "StringArray":
+          case "LongStringArray":
+          case "NumberArray":
+          case "BlobId":
+            fieldData += "TEXT";
+            break;
 
-            // Generate a query to create the tables if they doesn't exist
-            query = [];
-            query.push("CREATE TABLE IF NOT EXISTS");
-            query.push(type);
-            query.push("(");
+          case "Date":
+          case "Key":
+          case "Integer":
+            fieldData += "INTEGER";
+            break;
 
-            // Add each of the fields
-            fieldList = [];
-            for (field in fields)
-            {
-              var             fieldData = field + " ";
-
-              switch(fields[field])
-              {
-              case "String":
-              case "LongString":
-              case "KeyArray":
-              case "StringArray":
-              case "LongStringArray":
-              case "NumberArray":
-              case "BlobId":
-                fieldData += "TEXT";
-                break;
-
-              case "Date":
-              case "Key":
-              case "Integer":
-                fieldData += "INTEGER";
-                break;
-
-              case "Float":
-                fieldData += "REAL";
-                break;
-              }
-
-              // Add this field's data to the list
-              fieldList.push(fieldData);
-            }
-
-            // Handle the primary key field(s)
-            keyList = [];
-
-            // Is the key field an array?
-            if (qx.lang.Type.getClass(keyField) == "Array")
-            {
-              // Yup. Add each of them as an ascending primary key index
-              keyField.forEach(
-                function(field)
-                {
-                  keyList.push(field + " ASC");
-                });
-            }
-            else
-            {
-              keyList.push(keyField + " ASC");
-            }
-
-            // Add the primary key list to the list of fields
-            fieldList.push("PRIMARY KEY (" + keyList.join(", ") + ")");
-
-            // Add the field list to the query
-            query.push(fieldList.join(", "));
-
-            // Create the full query now
-            query = query.join(" ") + ");";
-
-            // Issue the query
-            sync.await(db.run(query, sync.defer()));
+          case "Float":
+            fieldData += "REAL";
+            break;
           }
 
-          // Create the Blobs table
-          query = [];
-          query.push("CREATE TABLE IF NOT EXISTS");
-          query.push("\"" + liberated.node.SqliteDbif.BLOB_TABLE_NAME + "\"");
-          query.push("(");
-          query.push(liberated.node.SqliteDbif.BLOB_KEY_NAME);
-          query.push("INTEGER PRIMARY KEY,");
-          query.push(liberated.node.SqliteDbif.BLOB_FIELD_NAME);
-          query.push("BLOB,");
-          query.push("contentType STRING,");
-          query.push("filename STRING");
-          query.push(");");
+          // Add this field's data to the list
+          fieldList.push(fieldData);
+        }
 
-          // Create the full query now
-          query = query.join(" ");
+        // Handle the primary key field(s)
+        keyList = [];
 
-          // Execute the create table query
-          sync.await(db.run(query, sync.defer()));
-        });
+        // Is the key field an array?
+        if (qx.lang.Type.getClass(keyField) == "Array")
+        {
+          // Yup. Add each of them as an ascending primary key index
+          keyField.forEach(
+            function(field)
+            {
+              keyList.push(field + " ASC");
+            });
+        }
+        else
+        {
+          keyList.push(keyField + " ASC");
+        }
+
+        // Add the primary key list to the list of fields
+        fieldList.push("PRIMARY KEY (" + keyList.join(", ") + ")");
+
+        // Add the field list to the query
+        query.push(fieldList.join(", "));
+
+        // Create the full query now
+        query = query.join(" ") + ");";
+
+        // Issue the query
+        deasync(db.run)(query);
+      }
+
+      // Create the Blobs table
+      query = [];
+      query.push("CREATE TABLE IF NOT EXISTS");
+      query.push("\"" + liberated.node.SqliteDbif.BLOB_TABLE_NAME + "\"");
+      query.push("(");
+      query.push(liberated.node.SqliteDbif.BLOB_KEY_NAME);
+      query.push("INTEGER PRIMARY KEY,");
+      query.push(liberated.node.SqliteDbif.BLOB_FIELD_NAME);
+      query.push("BLOB,");
+      query.push("contentType STRING,");
+      query.push("filename STRING");
+      query.push(");");
+
+      // Create the full query now
+      query = query.join(" ");
+
+      // Execute the create table query
+      deasync(db.run)(query);
     },
 
 
@@ -271,7 +266,7 @@ qx.Class.define("liberated.node.SqliteDbif",
       var             offset;
       var             sort;
       var             obj;
-      var             sync = require("synchronize");
+      var             deasync = require("deasync");
       var             This = liberated.node.SqliteDbif;
       
       // Get the entity type
@@ -435,7 +430,7 @@ qx.Class.define("liberated.node.SqliteDbif",
       db = liberated.node.SqliteDbif.__db;
 
       // Execute the query synchronously
-      dbResults = sync.await(db.all(query, params, sync.defer()));
+      dbResults = deasync(db.all)(query, params);
 
       if (typeof dbResults == "undefined")
       {
@@ -529,7 +524,7 @@ qx.Class.define("liberated.node.SqliteDbif",
       var             query;
       var             params;
       var             preparedQuery;
-      var             sync = require("synchronize");
+      var             deasync = require("deasync");
       var             This = liberated.node.SqliteDbif;
       
       // Get the field names for this entity type
@@ -591,7 +586,7 @@ qx.Class.define("liberated.node.SqliteDbif",
       db = liberated.node.SqliteDbif.__db;
 
       // Execute the query synchronously
-      key = sync.await(This.insert(db, query, params, sync.defer()));
+      key = deasync(This.insert)(db, query, params);
 
       // If the key value is auto-generated...
       if (keyProperty == "uid" ||
@@ -619,7 +614,7 @@ qx.Class.define("liberated.node.SqliteDbif",
       var             query;
       var             params = [];
       var             preparedQuery;
-      var             sync = require("synchronize");
+      var             deasync = require("deasync");
       
       query = [];
       query.push("DELETE FROM ");
@@ -659,7 +654,7 @@ qx.Class.define("liberated.node.SqliteDbif",
       db = liberated.node.SqliteDbif.__db;
 
       // Issue the remove query
-      sync.await(db.run(query, params, sync.defer()));
+      deasync(db.run)(query, params);
     },
     
     /**
@@ -688,7 +683,7 @@ qx.Class.define("liberated.node.SqliteDbif",
       var             params;
       var             preparedQuery;
       var             key;
-      var             sync = require("synchronize");
+      var             deasync = require("deasync");
       var             This = liberated.node.SqliteDbif;
       
       // If no content type is specified...
@@ -720,7 +715,7 @@ qx.Class.define("liberated.node.SqliteDbif",
       params = [ blobData, contentType, filename ];
 
       // Insert the row
-      key = sync.await(This.insert(db, query, params, sync.defer()));
+      key = deasync(This.insert)(db, query, params);
 
       // Give 'em the blob id
       return key;
@@ -742,7 +737,7 @@ qx.Class.define("liberated.node.SqliteDbif",
       var             query;
       var             preparedQuery;
       var             blob;
-      var             sync = require("synchronize");
+      var             deasync = require("deasync");
       
       // Generate the insertion query
       query =
@@ -760,7 +755,7 @@ qx.Class.define("liberated.node.SqliteDbif",
       db = liberated.node.SqliteDbif.__db;
 
       // Issue the query
-      blob = sync.await(db.get(query, [ blobId ], sync.defer()));
+      blob = deasync(db.get)(query, [ blobId ]);
       
       // Give 'em what they came for
       return blob[liberated.node.SqliteDbif.BLOB_FIELD_NAME];
@@ -782,7 +777,7 @@ qx.Class.define("liberated.node.SqliteDbif",
       var             query;
       var             blobInfo;
       var             retval = {};
-      var             sync = require("synchronize");
+      var             deasync = require("deasync");
       
       // Generate the insertion query
       query =
@@ -799,7 +794,7 @@ qx.Class.define("liberated.node.SqliteDbif",
       db = liberated.node.SqliteDbif.__db;
 
       // Issue the query
-      blobInfo = sync.await(db.get(query, [ blobId ], sync.defer()));
+      blobInfo = deasync(db.get)(query, [ blobId ]);
       
       // Give 'em what they came for
       return blobInfo;
@@ -818,7 +813,7 @@ qx.Class.define("liberated.node.SqliteDbif",
       var             query;
       var             preparedQuery;
       var             key;
-      var             sync = require("synchronize");
+      var             deasync = require("deasync");
       
       // Generate the insertion query
       query =
@@ -834,7 +829,7 @@ qx.Class.define("liberated.node.SqliteDbif",
       db = liberated.node.SqliteDbif.__db;
 
       // Issue the query
-      sync.await(db.run(query, [ blobId ], sync.defer()));
+      deasync(db.run)(query, [ blobId ]);
     },
     
     
@@ -849,7 +844,7 @@ qx.Class.define("liberated.node.SqliteDbif",
       var             db;
       var             query;
       var             preparedQuery;
-      var             sync = require("synchronize");
+      var             deasync = require("deasync");
 
       // Generate the BEGIN TRANSACTION query
       query = "BEGIN;";
@@ -858,7 +853,7 @@ qx.Class.define("liberated.node.SqliteDbif",
       db = liberated.node.SqliteDbif.__db;
 
       // Issue the query
-      sync.await(db.run(query, sync.defer()));
+      deasync(db.run)(query);
 
       return (
         {
@@ -875,7 +870,7 @@ qx.Class.define("liberated.node.SqliteDbif",
       var             db;
       var             query;
       var             preparedQuery;
-      var             sync = require("synchronize");
+      var             deasync = require("deasync");
 
       // Generate the COMMIT TRANSACTION query
       query = "COMMIT;";
@@ -884,7 +879,7 @@ qx.Class.define("liberated.node.SqliteDbif",
       db = liberated.node.SqliteDbif.__db;
 
       // Issue the query
-      sync.await(db.run(query, sync.defer()));
+      deasync(db.run)(query);
     },
     
     /**
@@ -895,7 +890,7 @@ qx.Class.define("liberated.node.SqliteDbif",
       var             db;
       var             query;
       var             preparedQuery;
-      var             sync = require("synchronize");
+      var             deasync = require("deasync");
 
       // Generate the ROLLBACK TRANSACTION query
       query = "ROLLBACK;";
@@ -904,7 +899,7 @@ qx.Class.define("liberated.node.SqliteDbif",
       db = liberated.node.SqliteDbif.__db;
 
       // Issue the query
-      sync.await(db.run(query, sync.defer()));
+      deasync(db.run)(query);
     }
   }
 });
